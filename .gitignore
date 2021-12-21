@@ -1,0 +1,7 @@
+.vs/
+Agenda.DATA/bin/
+Agenda.DATA/obj/
+ApiAgendaServicos/bin/
+ApiAgendaServicos/obj/
+JWT/obj/
+JWT/bin/
