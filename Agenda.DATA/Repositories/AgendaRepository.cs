@@ -1,5 +1,7 @@
 ﻿using Agenda.DATA.Models;
+using JWT.Controllers;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -32,42 +34,44 @@ namespace Agenda.DATA.Repositories
         public UsuarioModel Login(LoginModel objLogin)
         {
             UsuarioModel objUsuarioRetorno = new UsuarioModel();
-            using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+            try
             {
-                connection.Open();
-                SqlCommand command = connection.CreateCommand();
-                SqlTransaction transaction;
-                transaction = connection.BeginTransaction("Transaction");
-                command.Connection = connection;
-                command.Transaction = transaction;
-
-                try
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
                 {
-                    DateTime dataHoraTransacao = DateTime.Now;
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
 
-                    //-> Validando Login
-                    command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@usuLogin", objLogin.usuLogin);
-                    command.Parameters.AddWithValue("@usuSenha", objLogin.usuSenha);
-                    command.CommandText = @"
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+
+                        //-> Validando Login
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@usuLogin", objLogin.usuLogin);
+                        command.Parameters.AddWithValue("@usuSenha", objLogin.usuSenha);
+                        command.CommandText = @"
                                                 SELECT usuCod, usuNome, usuLogin, usuSenha, usuStatus, perfCod
                                                 FROM " + _bdAgenda + @".dbo.Usuario
                                                 WHERE usuLogin = @usuLogin 
                                                 AND usuSenha = @usuSenha;
                                             ";
-                    DataTable dt = new DataTable();
-                    SqlDataReader reader;
-                    reader = command.ExecuteReader();
-                    dt.Load(reader);
-                    if (dt.Rows.Count > 0)
-                    {
-                        //-> Se existir, faz insere na tabela de Log.
-                        command.Parameters.Clear();
-                        command.Parameters.AddWithValue("@logDesc", "Login de " + objLogin.usuLogin);
-                        command.Parameters.AddWithValue("@logDataHora", dataHoraTransacao);
-                        command.Parameters.AddWithValue("@usuCod", dt.Rows[0].ItemArray[0]);
-                        command.Parameters.AddWithValue("@tipLogCod", 1); //-> Tipo de Log de Acesso.
-                        command.CommandText = @"
+                        DataTable dt = new DataTable();
+                        SqlDataReader reader;
+                        reader = command.ExecuteReader();
+                        dt.Load(reader);
+                        if (dt.Rows.Count > 0)
+                        {
+                            //-> Se existir, faz insere na tabela de Log.
+                            command.Parameters.Clear();
+                            command.Parameters.AddWithValue("@logDesc", "Login de " + objLogin.usuLogin);
+                            command.Parameters.AddWithValue("@logDataHora", dataHoraTransacao);
+                            command.Parameters.AddWithValue("@usuCod", dt.Rows[0].ItemArray[0]);
+                            command.Parameters.AddWithValue("@tipLogCod", 1); //-> Tipo de Log de Acesso.
+                            command.CommandText = @"
                                                     INSERT INTO " + _bdAgenda + @".dbo.LogSis
                                                     (logDesc, logDataHora, usuCod, tipLogCod)
                                                     VALUES(
@@ -76,30 +80,42 @@ namespace Agenda.DATA.Repositories
                                                     @usuCod, 
                                                     @tipLogCod);
                                                 ";
-                        command.ExecuteNonQuery();
-                    } else
-                    {
-                        objUsuarioRetorno.MensagemErro = "Usuário ou senha inválidos.";
-                        return objUsuarioRetorno;
+                            command.ExecuteNonQuery();
+                        }
+                        else
+                        {
+                            objUsuarioRetorno.MensagemErro = "Usuário ou senha inválidos.";
+                            return objUsuarioRetorno;
+                        }
+
+                        objUsuarioRetorno.usuCod = int.Parse(dt.Rows[0].ItemArray[0].ToString());
+                        objUsuarioRetorno.usuNome = dt.Rows[0].ItemArray[1].ToString();
+                        objUsuarioRetorno.usuLogin = dt.Rows[0].ItemArray[2].ToString();
+                        objUsuarioRetorno.usuSenha = "";
+                        objUsuarioRetorno.usuStatus = dt.Rows[0].ItemArray[4].ToString() == "True" ? true : false;
+                        objUsuarioRetorno.perfCod = int.Parse(dt.Rows[0].ItemArray[5].ToString());
+                        objUsuarioRetorno.MensagemErro = "OK";
+
+                        //-> Se tudo der certo até aqui, gera um token de acesso.
+                        AutenticacaoController jwtAutenticacao = new AutenticacaoController();
+                        var Token = jwtAutenticacao.GerarToken(JsonConvert.SerializeObject(objUsuarioRetorno));
+                        objUsuarioRetorno.tokenAcesso = Token.ToString().Substring(10);
+                        objUsuarioRetorno.tokenAcesso = objUsuarioRetorno.tokenAcesso.Substring(0, objUsuarioRetorno.tokenAcesso.Length - 2);
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
                     }
-
-                    objUsuarioRetorno.usuCod = int.Parse(dt.Rows[0].ItemArray[0].ToString());
-                    objUsuarioRetorno.usuNome = dt.Rows[0].ItemArray[1].ToString();
-                    objUsuarioRetorno.usuLogin = dt.Rows[0].ItemArray[2].ToString();
-                    objUsuarioRetorno.usuSenha = "";
-                    objUsuarioRetorno.usuStatus = dt.Rows[0].ItemArray[4].ToString() == "True" ? true : false;
-                    objUsuarioRetorno.perfCod = int.Parse(dt.Rows[0].ItemArray[5].ToString());
-                    objUsuarioRetorno.MensagemErro = "OK";
-
-                    //-> Finaliza a transação.
-                    transaction.Commit();
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+                        objUsuarioRetorno.MensagemErro = ex.Message;
+                    }
                 }
-                catch (Exception ex)
-                {
-                    transaction.Rollback();
-                    connection.Close();
-                    objUsuarioRetorno.MensagemErro = ex.Message;
-                }
+            }
+            catch (Exception ex)
+            {
+                objUsuarioRetorno.MensagemErro = ex.Message;
             }
 
             return objUsuarioRetorno;
