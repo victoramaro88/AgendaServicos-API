@@ -49,7 +49,7 @@ namespace ApiAgendaServicos.Controllers
             return Ok(ret);
         }
 
-        [HttpPost]
+        [HttpGet]
         [Authorize("Bearer")]
         [Produces("application/json")]
         public IActionResult RenovaToken()

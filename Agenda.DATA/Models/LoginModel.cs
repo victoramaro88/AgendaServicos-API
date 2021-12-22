@@ -8,6 +8,5 @@ namespace Agenda.DATA.Models
     {
         public string usuLogin { get; set; }
         public string usuSenha { get; set; }
-        public string mensagemErro { get; set; }
     }
 }
