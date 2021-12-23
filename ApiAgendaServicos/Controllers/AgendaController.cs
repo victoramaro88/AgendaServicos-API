@@ -33,6 +33,23 @@ namespace ApiAgendaServicos.Controllers
         }
         #endregion
 
+        private object ParametrosToken(int parametroArray)
+        {
+            List<string> parametros = new List<string>();
+            var accessToken = Request.Headers[HeaderNames.Authorization];
+            AutenticacaoController jwtAutenticacao = new AutenticacaoController();
+            var ambienteToken = (List<string>)jwtAutenticacao.ValidaTokenRequisicao(accessToken.ToString().Replace("Bearer ", ""));
+
+            if(parametroArray == 999)
+            {
+                return ambienteToken;
+            }
+            else
+            {
+                return ambienteToken[parametroArray];
+            }
+        }
+
         [Route("{teste?}")]
         [HttpGet]
         [Authorize("Bearer")]
@@ -84,5 +101,104 @@ namespace ApiAgendaServicos.Controllers
                 return BadRequest("Parâmetros inválidos.");
             }            
         }
+
+        #region MANTER INFORMAÇÕES
+        [HttpPost]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ManterVeiculo([FromBody] VeiculoModel objVeiculo)
+        {
+            if (objVeiculo != null)
+            {
+                var param = ParametrosToken(0); //-> 0: usuCod.
+                int usuCod = int.Parse(param.ToString().Split(":")[1]);
+
+                var ret = _agendaRepo.ManterVeiculo(objVeiculo, usuCod);
+
+                if (ret == "OK")
+                {
+                    return Ok(ret);
+                }
+                else
+                {
+                    return BadRequest("Erro: " + ret);
+                }
+            }
+            else
+            {
+                return BadRequest("Parâmetros inválidos.");
+            }
+        }
+        #endregion
+
+        #region PESQUISAS
+        [Route("{diamCod?}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaDiametroFuro(int diamCod = 0)
+        {
+            try
+            {
+                var resp = _agendaRepo.ListaDiametroFuro(diamCod);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [Route("{veicCod?}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaVeiculo(int veicCod = 0)
+        {
+            try
+            {
+                var resp = _agendaRepo.ListaVeiculo(veicCod);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [Route("{tipVeicCod?}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaTipoVeiculo(int tipVeicCod = 0)
+        {
+            try
+            {
+                var resp = _agendaRepo.ListaTipoVeiculo(tipVeicCod);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [Route("{maqCod?}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaMaquina(int maqCod = 0)
+        {
+            try
+            {
+                var resp = _agendaRepo.ListaMaquina(maqCod);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        #endregion
     }
 }

@@ -119,7 +119,7 @@ namespace Agenda.DATA.Repositories
                         command.Parameters.AddWithValue("@usuSenha", objLogin.usuSenha);
                         command.CommandText = @"
                                                 SELECT usuCod, usuNome, usuLogin, usuSenha, usuStatus, perfCod
-                                                FROM " + _bdAgenda + @".dbo.Usuario
+                                                FROM " + _bdAgenda + @".dbo.Usuario WITH(NOLOCK)
                                                 WHERE usuLogin = @usuLogin 
                                                 AND usuSenha = @usuSenha;
                                             ";
@@ -170,6 +170,92 @@ namespace Agenda.DATA.Repositories
             }
 
             return objUsuarioRetorno;
+        }
+
+        #region MANTER INFORMAÇÕES
+        public string ManterVeiculo(VeiculoModel objVeiculo, int usuCod)
+        {
+            string ret = "";
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@veicCod", objVeiculo.veicCod);
+                        command.Parameters.AddWithValue("@veicMarca", objVeiculo.veicMarca);
+                        command.Parameters.AddWithValue("@veicModelo", objVeiculo.veicModelo);
+                        command.Parameters.AddWithValue("@veicAno", objVeiculo.veicAno);
+                        command.Parameters.AddWithValue("@veicPlaca", objVeiculo.veicPlaca);
+                        command.Parameters.AddWithValue("@veicObse", objVeiculo.veicObse);
+                        command.Parameters.AddWithValue("@veicStatus", objVeiculo.veicStatus);
+                        command.Parameters.AddWithValue("@tipVeicCod", objVeiculo.tipVeicCod);
+
+                        //-> Se tiver id, faz Update:
+                        if (objVeiculo.veicCod > 0)
+                        {
+                            command.CommandText = @"
+                                                        UPDATE " + _bdAgenda + @".dbo.Veiculo
+                                                        SET 
+                                                            veicMarca=@veicMarca, 
+                                                            veicModelo=@veicModelo, 
+                                                            veicAno=@veicAno, 
+                                                            veicPlaca=@veicPlaca, 
+                                                            veicObse=@veicObse, 
+                                                            veicStatus=@veicStatus, 
+                                                            tipVeicCod=@tipVeicCod
+                                                        WHERE veicCod=@veicCod;
+                                                    ";
+                            command.ExecuteNonQuery();
+                        }
+                        //-> Senão, insere.
+                        else
+                        {
+                            command.CommandText = @"
+                                                        INSERT INTO " + _bdAgenda + @".dbo.Veiculo
+                                                        (veicMarca, veicModelo, veicAno, veicPlaca, veicObse, veicStatus, tipVeicCod)
+                                                        VALUES(
+                                                            @veicMarca,
+                                                            @veicModelo,
+                                                            @veicAno,
+                                                            @veicPlaca,
+                                                            @veicObse,
+                                                            @veicStatus,
+                                                            @tipVeicCod
+                                                        );
+                                                    ";
+                            command.ExecuteNonQuery();
+                        }
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                        ret = "OK";
+
+                        InsereLog(objVeiculo, usuCod, 2, dataHoraTransacao); //-> Tipo de Log 2: Transação.
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+                        ret = ex.Message;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = ex.Message;
+            }
+
+            return ret;
         }
 
         public string ManterMaquina(MaquinaModel objMaquina)
@@ -251,5 +337,294 @@ namespace Agenda.DATA.Repositories
 
             return ret;
         }
+        #endregion
+
+        #region PESQUISAS
+        public List<DiametroFuroModel> ListaDiametroFuro(int diamCod)
+        {
+            List<DiametroFuroModel> listaRetorno = new List<DiametroFuroModel>();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@diamCod", diamCod);
+
+                        command.CommandText = @"
+                                                    SELECT diamCod, diamDesc, diamMax, diamMin, diamStatus
+                                                    FROM " + _bdAgenda + @".dbo.DiametroFuro WITH(NOLOCK)
+                                                ";
+
+                        if (diamCod > 0)
+                        {
+                            command.CommandText += " WHERE diamCod = @diamCod";
+                        }
+
+                        SqlDataReader reader = null;
+                        reader = command.ExecuteReader();
+                        if (reader != null && reader.HasRows)
+                        {
+                            DiametroFuroModel objItem;
+                            while (reader.Read())
+                            {
+                                objItem = new DiametroFuroModel();
+
+                                objItem.diamCod = int.Parse(reader["diamCod"].ToString());
+                                objItem.diamDesc = reader["diamDesc"].ToString();
+                                objItem.diamMax = int.Parse(reader["diamMax"].ToString());
+                                objItem.diamMin = int.Parse(reader["diamMin"].ToString());
+                                objItem.diamStatus = bool.Parse(reader["diamStatus"].ToString());
+
+                                listaRetorno.Add(objItem);
+                            }
+                        }
+
+                        reader.Close();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return listaRetorno;
+        }
+
+        public List<VeiculoModel> ListaVeiculo(int veicCod)
+        {
+            List<VeiculoModel> listaRetorno = new List<VeiculoModel>();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@veicCod", veicCod);
+
+                        command.CommandText = @"
+                                                    SELECT veicCod, veicMarca, veicModelo, veicAno, veicPlaca, veicObse, veicStatus, tipVeicCod
+                                                    FROM " + _bdAgenda + @".dbo.Veiculo WITH(NOLOCK)
+                                                ";
+
+                        if (veicCod > 0)
+                        {
+                            command.CommandText += " WHERE veicCod = @veicCod";
+                        }
+
+                        SqlDataReader reader = null;
+                        reader = command.ExecuteReader();
+                        if (reader != null && reader.HasRows)
+                        {
+                            VeiculoModel objItem;
+                            while (reader.Read())
+                            {
+                                objItem = new VeiculoModel();
+
+                                objItem.veicCod = int.Parse(reader["veicCod"].ToString());
+                                objItem.veicMarca = reader["veicMarca"].ToString();
+                                objItem.veicModelo = reader["veicModelo"].ToString();
+                                objItem.veicAno = int.Parse(reader["veicAno"].ToString());
+                                objItem.veicPlaca = reader["veicPlaca"].ToString();
+                                objItem.veicObse = reader["veicObse"].ToString();
+                                objItem.veicStatus = bool.Parse(reader["veicStatus"].ToString());
+                                objItem.tipVeicCod = int.Parse(reader["tipVeicCod"].ToString());
+
+                                listaRetorno.Add(objItem);
+                            }
+                        }
+
+                        reader.Close();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return listaRetorno;
+        }
+        public List<TipoVeiculoModel> ListaTipoVeiculo(int tipVeicCod)
+        {
+            List<TipoVeiculoModel> listaRetorno = new List<TipoVeiculoModel>();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@veicCod", tipVeicCod);
+
+                        command.CommandText = @"
+                                                    SELECT tipVeicCod, tipVeicDesc, tipVeicStatus
+                                                    FROM " + _bdAgenda + @".dbo.TipoVeiculo WITH(NOLOCK);
+                                                ";
+
+                        if (tipVeicCod > 0)
+                        {
+                            command.CommandText += " WHERE tipVeicCod = @tipVeicCod";
+                        }
+
+                        SqlDataReader reader = null;
+                        reader = command.ExecuteReader();
+                        if (reader != null && reader.HasRows)
+                        {
+                            TipoVeiculoModel objItem;
+                            while (reader.Read())
+                            {
+                                objItem = new TipoVeiculoModel();
+
+                                objItem.tipVeicCod = int.Parse(reader["tipVeicCod"].ToString());
+                                objItem.tipVeicDesc = reader["tipVeicDesc"].ToString();
+                                objItem.tipVeicStatus = bool.Parse(reader["tipVeicStatus"].ToString());
+
+                                listaRetorno.Add(objItem);
+                            }
+                        }
+
+                        reader.Close();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return listaRetorno;
+        }
+
+        public List<MaquinaModel> ListaMaquina(int maqCod)
+        {
+            List<MaquinaModel> listaRetorno = new List<MaquinaModel>();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@maqCod", maqCod);
+
+                        command.CommandText = @"
+                                                    SELECT maqCod, maqMarca, maqModelo, maqObse, maqStatus, diamCod, veicCod
+                                                    FROM " + _bdAgenda + @".dbo.Maquina WITH(NOLOCK)
+                                                ";
+
+                        if (maqCod > 0)
+                        {
+                            command.CommandText += " WHERE maqCod = @maqCod";
+                        }
+
+                        SqlDataReader reader = null;
+                        reader = command.ExecuteReader();
+                        if (reader != null && reader.HasRows)
+                        {
+                            MaquinaModel objItem;
+                            while (reader.Read())
+                            {
+                                objItem = new MaquinaModel();
+
+                                objItem.maqCod = int.Parse(reader["maqCod"].ToString());
+                                objItem.maqMarca = reader["maqMarca"].ToString();
+                                objItem.maqModelo = reader["maqModelo"].ToString();
+                                objItem.maqObse = reader["maqObse"].ToString();
+                                objItem.maqStatus = bool.Parse(reader["maqStatus"].ToString());
+                                objItem.diamCod = int.Parse(reader["diamCod"].ToString());
+                                objItem.veicCod = int.Parse(reader["veicCod"].ToString());
+
+                                listaRetorno.Add(objItem);
+                            }
+                        }
+
+                        reader.Close();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return listaRetorno;
+        }
+        #endregion
     }
 }
