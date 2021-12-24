@@ -40,7 +40,7 @@ namespace ApiAgendaServicos.Controllers
             AutenticacaoController jwtAutenticacao = new AutenticacaoController();
             var ambienteToken = (List<string>)jwtAutenticacao.ValidaTokenRequisicao(accessToken.ToString().Replace("Bearer ", ""));
 
-            if(parametroArray == 999)
+            if (parametroArray == 999)
             {
                 return ambienteToken;
             }
@@ -82,12 +82,12 @@ namespace ApiAgendaServicos.Controllers
         [Produces("application/json")]
         public IActionResult Login([FromBody] LoginModel objLogin)
         {
-            if(objLogin != null && (objLogin.usuLogin.Length > 0 && objLogin.usuSenha.Length > 0))
+            if (objLogin != null && (objLogin.usuLogin.Length > 0 && objLogin.usuSenha.Length > 0))
             {
                 objLogin.usuSenha = _crypto.GerarHashString(objLogin.usuSenha);
                 var ret = _agendaRepo.Login(objLogin);
 
-                if(ret.MensagemErro == "OK")
+                if (ret.MensagemErro == "OK")
                 {
                     return Ok(ret);
                 }
@@ -99,7 +99,7 @@ namespace ApiAgendaServicos.Controllers
             else
             {
                 return BadRequest("Parâmetros inválidos.");
-            }            
+            }
         }
 
         #region MANTER INFORMAÇÕES
@@ -114,6 +114,34 @@ namespace ApiAgendaServicos.Controllers
                 int usuCod = int.Parse(param.ToString().Split(":")[1]);
 
                 var ret = _agendaRepo.ManterVeiculo(objVeiculo, usuCod);
+
+                if (ret == "OK")
+                {
+                    return Ok(ret);
+                }
+                else
+                {
+                    return BadRequest("Erro: " + ret);
+                }
+            }
+            else
+            {
+                return BadRequest("Parâmetros inválidos.");
+            }
+        }
+
+        [Route("{veicCod}/{veicStatus}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult AlteraStatusVeiculo(int veicCod, bool veicStatus)
+        {
+            if (veicCod > 0)
+            {
+                var param = ParametrosToken(0); //-> 0: usuCod.
+                int usuCod = int.Parse(param.ToString().Split(":")[1]);
+
+                var ret = _agendaRepo.AlteraStatusVeiculo(veicCod, veicStatus, usuCod);
 
                 if (ret == "OK")
                 {
