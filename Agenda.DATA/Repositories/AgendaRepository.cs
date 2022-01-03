@@ -195,7 +195,7 @@ namespace Agenda.DATA.Repositories
                         command.Parameters.AddWithValue("@veicMarca", objVeiculo.veicMarca);
                         command.Parameters.AddWithValue("@veicModelo", objVeiculo.veicModelo);
                         command.Parameters.AddWithValue("@veicAno", objVeiculo.veicAno);
-                        command.Parameters.AddWithValue("@veicPlaca", objVeiculo.veicPlaca);
+                        command.Parameters.AddWithValue("@veicPlaca", objVeiculo.veicPlaca.ToUpper());
                         command.Parameters.AddWithValue("@veicObse", objVeiculo.veicObse);
                         command.Parameters.AddWithValue("@veicStatus", objVeiculo.veicStatus);
                         command.Parameters.AddWithValue("@tipVeicCod", objVeiculo.tipVeicCod);
