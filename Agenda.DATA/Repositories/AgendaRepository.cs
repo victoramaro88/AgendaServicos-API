@@ -293,7 +293,7 @@ namespace Agenda.DATA.Repositories
                         ret = "OK";
 
                         object obj = JObject.Parse("{\n    \"veicCod\":\""+veicCod.ToString()+"\",\n    \"veicStatus\": \""+veicStatus.ToString()+"\"\n}");
-                        InsereLog(obj, usuCod, 1, dataHoraTransacao); //-> Tipo de Log de Acesso = 1.
+                        InsereLog(obj, usuCod, 2, dataHoraTransacao); //-> Tipo de Log de Transação = 2.
                     }
                     catch (Exception ex)
                     {
@@ -311,7 +311,7 @@ namespace Agenda.DATA.Repositories
             return ret;
         }
 
-        public string ManterMaquina(MaquinaModel objMaquina)
+        public string ManterMaquina(MaquinaModel objMaquina, int usuCod)
         {
             string ret = "";
             try
@@ -374,6 +374,8 @@ namespace Agenda.DATA.Repositories
                         //-> Finaliza a transação.
                         transaction.Commit();
                         ret = "OK";
+
+                        InsereLog(objMaquina, usuCod, 2, dataHoraTransacao); //-> Tipo de Log 2: Transação.
                     }
                     catch (Exception ex)
                     {
@@ -391,6 +393,8 @@ namespace Agenda.DATA.Repositories
             return ret;
         }
         #endregion
+
+        //--------------------------------------------------------------------------------------------------------------------------------
 
         #region PESQUISAS
         public List<DiametroFuroModel> ListaDiametroFuro(int diamCod)
