@@ -541,6 +541,7 @@ namespace Agenda.DATA.Repositories
 
             return listaRetorno;
         }
+
         public List<TipoVeiculoModel> ListaTipoVeiculo(int tipVeicCod)
         {
             List<TipoVeiculoModel> listaRetorno = new List<TipoVeiculoModel>();
