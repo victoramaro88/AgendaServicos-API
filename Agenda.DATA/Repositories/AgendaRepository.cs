@@ -615,7 +615,7 @@ namespace Agenda.DATA.Repositories
         {
             List<MaquinaModel> listaRetorno = new List<MaquinaModel>();
             try
-            {
+            { 
                 using (SqlConnection connection = new SqlConnection(_ConnAgenda))
                 {
                     connection.Open();
