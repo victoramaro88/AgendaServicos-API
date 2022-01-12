@@ -184,6 +184,34 @@ namespace ApiAgendaServicos.Controllers
                 return BadRequest("Parâmetros inválidos.");
             }
         }
+
+        [Route("{maqCod}/{maqStatus}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult AlteraStatusMaquina(int maqCod, bool maqStatus)
+        {
+            if (maqCod > 0)
+            {
+                var param = ParametrosToken(0); //-> 0: usuCod.
+                int usuCod = int.Parse(param.ToString().Split(":")[1]);
+
+                var ret = _agendaRepo.AlteraStatusMaquina(maqCod, maqStatus, usuCod);
+
+                if (ret == "OK")
+                {
+                    return Ok(ret);
+                }
+                else
+                {
+                    return BadRequest("Erro: " + ret);
+                }
+            }
+            else
+            {
+                return BadRequest("Parâmetros inválidos.");
+            }
+        }
         #endregion
 
         //--------------------------------------------------------------------------------------------------------------------------------
@@ -249,6 +277,23 @@ namespace ApiAgendaServicos.Controllers
             try
             {
                 var resp = _agendaRepo.ListaMaquina(maqCod);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [Route("{apNavCod?}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaAparelhoNavegacao(int apNavCod = 0)
+        {
+            try
+            {
+                var resp = _agendaRepo.ListaAparelhoNavegacao(apNavCod);
                 return Ok(resp);
             }
             catch (Exception ex)
