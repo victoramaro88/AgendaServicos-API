@@ -345,7 +345,60 @@ namespace Agenda.DATA.Repositories
                         transaction.Commit();
                         ret = "OK";
 
-                        object obj = JObject.Parse("{\n    \"veicCod\":\"" + maqCod.ToString() + "\",\n    \"veicStatus\": \"" + maqStatus.ToString() + "\"\n}");
+                        object obj = JObject.Parse("{\n    \"maqCod\":\"" + maqCod.ToString() + "\",\n    \"maqStatus\": \"" + maqStatus.ToString() + "\"\n}");
+                        InsereLog(obj, usuCod, 2, dataHoraTransacao); //-> Tipo de Log de Transação = 2.
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+                        ret = ex.Message;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = ex.Message;
+            }
+
+            return ret;
+        }
+
+        public string AlteraStatusEquipe(int equipCod, bool equipStatus, int usuCod)
+        {
+            equipStatus = !equipStatus;
+            string ret = "";
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@equipCod", equipCod);
+                        command.Parameters.AddWithValue("@equipStatus", equipStatus);
+
+                        command.CommandText = @"
+                                                    UPDATE " + _bdAgenda + @".dbo.Equipe
+                                                    SET 
+                                                        equipStatus=@equipStatus
+                                                    WHERE equipCod=@equipCod;
+                                                ";
+                        command.ExecuteNonQuery();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                        ret = "OK";
+
+                        object obj = JObject.Parse("{\n    \"equipCod\":\"" + equipCod.ToString() + "\",\n    \"equipStatus\": \"" + equipStatus.ToString() + "\"\n}");
                         InsereLog(obj, usuCod, 2, dataHoraTransacao); //-> Tipo de Log de Transação = 2.
                     }
                     catch (Exception ex)
@@ -780,6 +833,77 @@ namespace Agenda.DATA.Repositories
                                 objItem.apNavMarcMod = reader["apNavMarcMod"].ToString(); ;
                                 objItem.apNavObse = reader["apNavObse"].ToString(); ;
                                 objItem.apNavStatus = bool.Parse(reader["apNavStatus"].ToString());
+
+                                listaRetorno.Add(objItem);
+                            }
+                        }
+
+                        reader.Close();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return listaRetorno;
+        }
+
+        public List<EquipeModel> ListaEquipe(int equipCod)
+        {
+            List<EquipeModel> listaRetorno = new List<EquipeModel>();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@equipCod", equipCod);
+
+                        command.CommandText = @"
+                                                    SELECT equipCod, equipDesc, equipStatus, apNavCod, maqCod
+                                                    FROM " + _bdAgenda + @".dbo.Equipe WITH(NOLOCK)
+                                                ";
+
+                        if (equipCod > 0)
+                        {
+                            command.CommandText += " WHERE equipCod = @equipCod";
+                        }
+
+                        SqlDataReader reader = null;
+                        reader = command.ExecuteReader();
+                        if (reader != null && reader.HasRows)
+                        {
+                            EquipeModel objItem;
+                            while (reader.Read())
+                            {
+                                objItem = new EquipeModel();
+
+                                objItem.equipCod = int.Parse(reader["equipCod"].ToString());
+                                objItem.equipDesc = reader["equipDesc"].ToString();
+                                objItem.equipStatus = bool.Parse(reader["equipStatus"].ToString());
+                                objItem.apNavCod = int.Parse(reader["apNavCod"].ToString());
+                                objItem.maqCod = int.Parse(reader["maqCod"].ToString());
 
                                 listaRetorno.Add(objItem);
                             }

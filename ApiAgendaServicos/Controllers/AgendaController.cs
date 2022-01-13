@@ -212,6 +212,34 @@ namespace ApiAgendaServicos.Controllers
                 return BadRequest("Parâmetros inválidos.");
             }
         }
+
+        [Route("{equipCod}/{equipStatus}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult AlteraStatusEquipe(int equipCod, bool equipStatus)
+        {
+            if (equipCod > 0)
+            {
+                var param = ParametrosToken(0); //-> 0: usuCod.
+                int usuCod = int.Parse(param.ToString().Split(":")[1]);
+
+                var ret = _agendaRepo.AlteraStatusEquipe(equipCod, equipStatus, usuCod);
+
+                if (ret == "OK")
+                {
+                    return Ok(ret);
+                }
+                else
+                {
+                    return BadRequest("Erro: " + ret);
+                }
+            }
+            else
+            {
+                return BadRequest("Parâmetros inválidos.");
+            }
+        }
         #endregion
 
         //--------------------------------------------------------------------------------------------------------------------------------
@@ -294,6 +322,23 @@ namespace ApiAgendaServicos.Controllers
             try
             {
                 var resp = _agendaRepo.ListaAparelhoNavegacao(apNavCod);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [Route("{equipCod?}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaEquipe(int equipCod = 0)
+        {
+            try
+            {
+                var resp = _agendaRepo.ListaEquipe(equipCod);
                 return Ok(resp);
             }
             catch (Exception ex)
