@@ -364,6 +364,22 @@ namespace ApiAgendaServicos.Controllers
             }
         }
 
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaUsuariosDisponiveis()
+        {
+            try
+            {
+                var resp = _agendaRepo.ListaUsuariosDisponiveis();
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [Route("{equipCod?}")]
         [HttpGet]
         [Authorize("Bearer")]

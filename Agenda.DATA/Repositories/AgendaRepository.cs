@@ -1006,6 +1006,42 @@ namespace Agenda.DATA.Repositories
             return listaRetorno;
         }
 
+        public List<UsuarioTbModel> ListaUsuariosDisponiveis()
+        {
+            List<UsuarioTbModel> listaRetorno = new List<UsuarioTbModel>();
+            try
+            {
+                List<UsuarioTbModel> listaUsuarios = new List<UsuarioTbModel>();
+                List<EquipeUsuarioModel> listaEquipeUsuario = new List<EquipeUsuarioModel>();
+
+                listaUsuarios = ListaUsuario(0);
+                foreach (var item in listaUsuarios)
+                {
+                    UsuarioTbModel objUsr = new UsuarioTbModel();
+                    objUsr = item;
+                    listaRetorno.Add(objUsr);
+                }
+                listaEquipeUsuario = ListaEquipeUsuario(0);
+
+                foreach (var itmUsr in listaUsuarios)
+                {
+                    foreach (var itmEquiUsr in listaEquipeUsuario)
+                    {
+                        if(itmUsr.usuCod == itmEquiUsr.usuCod)
+                        {
+                            listaRetorno.Remove(itmUsr);
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return listaRetorno;
+        }
+
         public List<EquipeUsuarioModel> ListaEquipeUsuario(int equipCod)
         {
             List<EquipeUsuarioModel> listaRetorno = new List<EquipeUsuarioModel>();
