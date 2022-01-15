@@ -930,6 +930,163 @@ namespace Agenda.DATA.Repositories
 
             return listaRetorno;
         }
+
+        public List<UsuarioTbModel> ListaUsuario(int usuCod)
+        {
+            List<UsuarioTbModel> listaRetorno = new List<UsuarioTbModel>();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@usuCod", usuCod);
+
+                        command.CommandText = @"
+                                                    SELECT usuCod, usuNome, usuLogin, usuSenha, usuStatus, perfCod
+                                                    FROM " + _bdAgenda + @".dbo.Usuario WITH(NOLOCK)
+                                                ";
+
+                        if (usuCod > 0)
+                        {
+                            command.CommandText += " WHERE usuCod = @usuCod";
+                        }
+
+                        command.CommandText += " ORDER BY usuNome";
+
+                        SqlDataReader reader = null;
+                        reader = command.ExecuteReader();
+                        if (reader != null && reader.HasRows)
+                        {
+                            UsuarioTbModel objItem;
+                            while (reader.Read())
+                            {
+                                objItem = new UsuarioTbModel();
+
+
+                                objItem.usuCod = int.Parse(reader["usuCod"].ToString());
+                                objItem.usuNome = reader["usuNome"].ToString();
+                                objItem.usuLogin = reader["usuLogin"].ToString();
+                                objItem.usuSenha = "";// reader["usuSenha"].ToString();
+                                objItem.usuStatus = bool.Parse(reader["usuStatus"].ToString());
+                                objItem.perfCod = int.Parse(reader["perfCod"].ToString());
+
+                                listaRetorno.Add(objItem);
+                            }
+                        }
+
+                        reader.Close();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return listaRetorno;
+        }
+
+        public List<EquipeUsuarioModel> ListaEquipeUsuario(int equipCod)
+        {
+            List<EquipeUsuarioModel> listaRetorno = new List<EquipeUsuarioModel>();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@equipCod", equipCod);
+
+                        command.CommandText = @"
+                                                    SELECT 
+	                                                    Equ.equipCod, Equ.equipDesc, Equ.equipStatus 
+	                                                    , Usr.usuCod, Usr.usuNome, Usr.usuStatus 
+	                                                    , Perf.perfCod , Perf.perfDesc 
+                                                    FROM " + _bdAgenda + @".dbo.UsuarioEquipe AS UsrEqu WITH(NOLOCK)
+                                                    INNER JOIN " + _bdAgenda + @".dbo.Equipe AS Equ WITH(NOLOCK) ON Equ.equipCod = UsrEqu.equipCod 
+                                                    INNER JOIN " + _bdAgenda + @".dbo.Usuario AS Usr WITH(NOLOCK) ON Usr.usuCod = UsrEqu.usuCod 
+                                                    INNER JOIN " + _bdAgenda + @".dbo.Perfil AS Perf WITH(NOLOCK) ON Perf.perfCod = Usr.perfCod 
+                                                ";
+
+                        if (equipCod > 0)
+                        {
+                            command.CommandText += " WHERE Equ.equipCod = @equipCod";
+                        }
+
+                        command.CommandText += " ORDER BY Equ.equipDesc, Usr.usuNome";
+
+                        SqlDataReader reader = null;
+                        reader = command.ExecuteReader();
+                        if (reader != null && reader.HasRows)
+                        {
+                            EquipeUsuarioModel objItem;
+                            while (reader.Read())
+                            {
+                                objItem = new EquipeUsuarioModel();
+
+                                objItem.equipCod = int.Parse(reader["equipCod"].ToString());
+                                objItem.equipDesc = reader["equipDesc"].ToString();
+                                objItem.equipStatus = bool.Parse(reader["equipStatus"].ToString());
+                                objItem.usuCod = int.Parse(reader["usuCod"].ToString());
+                                objItem.usuNome = reader["usuNome"].ToString();
+                                objItem.usuStatus = bool.Parse(reader["usuStatus"].ToString());
+                                objItem.perfCod = int.Parse(reader["perfCod"].ToString());
+                                objItem.perfDesc = reader["perfDesc"].ToString();
+
+                                listaRetorno.Add(objItem);
+                            }
+                        }
+
+                        reader.Close();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return listaRetorno;
+        }
         #endregion
     }
 }

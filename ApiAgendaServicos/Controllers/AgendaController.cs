@@ -346,6 +346,40 @@ namespace ApiAgendaServicos.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [Route("{usuCod?}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaUsuario(int usuCod = 0)
+        {
+            try
+            {
+                var resp = _agendaRepo.ListaUsuario(usuCod);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [Route("{equipCod?}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaEquipeUsuario(int equipCod)
+        {
+            try
+            {
+                var resp = _agendaRepo.ListaEquipeUsuario(equipCod);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
         #endregion
     }
 }
