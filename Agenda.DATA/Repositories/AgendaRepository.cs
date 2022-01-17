@@ -498,6 +498,146 @@ namespace Agenda.DATA.Repositories
 
             return ret;
         }
+
+        public string ManterEquipe(UsuarioEnvioModel objEquipe, int usuCod)
+        {
+            string ret = "";
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@equipCod", objEquipe.objEnvioEquipe.equipCod);
+                        command.Parameters.AddWithValue("@equipDesc", objEquipe.objEnvioEquipe.equipDesc);
+                        command.Parameters.AddWithValue("@maqCod", objEquipe.objEnvioEquipe.maqCod);
+                        command.Parameters.AddWithValue("@apNavCod", objEquipe.objEnvioEquipe.apNavCod);
+                        command.Parameters.AddWithValue("@equipStatus", objEquipe.objEnvioEquipe.equipStatus);
+
+                        //-> Se tiver id, faz Update:
+                        if (objEquipe.objEnvioEquipe.equipCod > 0)
+                        {
+                            //-> Altera primeiro a equipe (Equipe)
+                            command.CommandText = @"
+                                                        UPDATE " + _bdAgenda + @".dbo.Equipe
+                                                        SET equipDesc=@equipDesc, 
+                                                        equipStatus=@equipStatus, 
+                                                        apNavCod=@apNavCod, 
+                                                        maqCod=@maqCod
+                                                        WHERE equipCod=@equipCod;
+                                                    ";
+                            command.ExecuteNonQuery();
+
+                            //-> Apaga os integrantes que estavam relacionados (UsuarioEquipe)
+                            command.CommandText = @"
+                                                        DELETE FROM " + _bdAgenda + @".dbo.UsuarioEquipe
+                                                        WHERE equipCod=@equipCod;
+                                                    ";
+                            command.ExecuteNonQuery();
+
+                            //-> Insere os novos usuários na tabela de relacionamento (UsuarioEquipe)
+                            foreach (var itmUsr in objEquipe.objEnvioListaUsuario)
+                            {
+                                command.Parameters.Clear();
+                                command.Parameters.AddWithValue("@equipCod", objEquipe.objEnvioEquipe.equipCod);
+                                command.Parameters.AddWithValue("@usuCod", itmUsr.usuCod);
+                                command.CommandText = @"
+                                                        INSERT INTO " + _bdAgenda + @".dbo.UsuarioEquipe
+                                                        (equipCod, usuCod)
+                                                        VALUES(
+                                                        @equipCod, 
+                                                        @usuCod
+                                                        );
+                                                    ";
+                                command.ExecuteNonQuery();
+                            }
+                        }
+                        //-> Senão, insere.
+                        else
+                        {
+                            command.CommandText = @"
+                                                        INSERT INTO " + _bdAgenda + @".dbo.Equipe
+                                                        (equipDesc, equipStatus, apNavCod, maqCod)
+                                                        VALUES(
+                                                        @equipDesc, 
+                                                        @equipStatus, 
+                                                        @apNavCod, 
+                                                        @maqCod
+                                                        );
+                                                    ";
+                            command.ExecuteNonQuery();
+
+                            //-> Retornando o Id que foi inserido da equipe.
+                            command.CommandText = @"
+                                                        SELECT MAX(equipCod) FROM " + _bdAgenda + @".dbo.Equipe WITH(NOLOCK);
+                                                    ";
+                            int lastEquipCod = 0;
+                            DataTable dt = new DataTable();
+                            SqlDataReader reader;
+                            reader = command.ExecuteReader();
+                            dt.Load(reader);
+                            if (dt.Rows.Count > 0)
+                            {
+                                lastEquipCod = int.Parse(dt.Rows[0].ItemArray[0].ToString());
+                            }
+
+                            if (lastEquipCod > 0)
+                            {
+                                //-> Insere os novos usuários na tabela de relacionamento (UsuarioEquipe)
+                                foreach (var itmUsr in objEquipe.objEnvioListaUsuario)
+                                {
+                                    command.Parameters.Clear();
+                                    command.Parameters.AddWithValue("@equipCod", lastEquipCod);
+                                    command.Parameters.AddWithValue("@usuCod", itmUsr.usuCod);
+                                    command.CommandText = @"
+                                                        INSERT INTO " + _bdAgenda + @".dbo.UsuarioEquipe
+                                                        (equipCod, usuCod)
+                                                        VALUES(
+                                                        @equipCod, 
+                                                        @usuCod
+                                                        );
+                                                    ";
+                                    command.ExecuteNonQuery();
+                                }
+                            }
+                            else
+                            {
+                                ret = "falha ao realizar a operação.";
+                                transaction.Rollback();
+                                connection.Close();
+                            }
+                        }
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                        ret = "OK";
+
+                        InsereLog(objEquipe, usuCod, 2, dataHoraTransacao); //-> Tipo de Log 2: Transação.
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+                        ret = ex.Message;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = ex.Message;
+            }
+
+            return ret;
+        }
         #endregion
 
         //--------------------------------------------------------------------------------------------------------------------------------
@@ -721,7 +861,7 @@ namespace Agenda.DATA.Repositories
         {
             List<MaquinaModel> listaRetorno = new List<MaquinaModel>();
             try
-            { 
+            {
                 using (SqlConnection connection = new SqlConnection(_ConnAgenda))
                 {
                     connection.Open();
@@ -1027,7 +1167,7 @@ namespace Agenda.DATA.Repositories
                 {
                     foreach (var itmEquiUsr in listaEquipeUsuario)
                     {
-                        if(itmUsr.usuCod == itmEquiUsr.usuCod)
+                        if (itmUsr.usuCod == itmEquiUsr.usuCod)
                         {
                             listaRetorno.Remove(itmUsr);
                         }

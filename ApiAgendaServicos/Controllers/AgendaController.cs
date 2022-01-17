@@ -129,6 +129,32 @@ namespace ApiAgendaServicos.Controllers
                 return BadRequest("Parâmetros inválidos.");
             }
         }
+        [HttpPost]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ManterEquipe([FromBody]  UsuarioEnvioModel objEquipe)
+        {
+            if (objEquipe != null)
+            {
+                var param = ParametrosToken(0); //-> 0: usuCod.
+                int usuCod = int.Parse(param.ToString().Split(":")[1]);
+
+                var ret = _agendaRepo.ManterEquipe(objEquipe, usuCod);
+
+                if (ret == "OK")
+                {
+                    return Ok(ret);
+                }
+                else
+                {
+                    return BadRequest("Erro: " + ret);
+                }
+            }
+            else
+            {
+                return BadRequest("Parâmetros inválidos.");
+            }
+        }
 
         [HttpPost]
         [Authorize("Bearer")]
