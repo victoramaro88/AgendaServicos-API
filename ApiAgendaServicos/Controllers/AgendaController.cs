@@ -390,6 +390,23 @@ namespace ApiAgendaServicos.Controllers
             }
         }
 
+        [Route("{perfCod?}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaPerfil(int perfCod = 0)
+        {
+            try
+            {
+                var resp = _agendaRepo.ListaPerfil(perfCod);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [HttpGet]
         [Authorize("Bearer")]
         [Produces("application/json")]

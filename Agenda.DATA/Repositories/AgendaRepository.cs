@@ -1111,14 +1111,82 @@ namespace Agenda.DATA.Repositories
                             while (reader.Read())
                             {
                                 objItem = new UsuarioTbModel();
-
-
                                 objItem.usuCod = int.Parse(reader["usuCod"].ToString());
                                 objItem.usuNome = reader["usuNome"].ToString();
                                 objItem.usuLogin = reader["usuLogin"].ToString();
                                 objItem.usuSenha = "";// reader["usuSenha"].ToString();
                                 objItem.usuStatus = bool.Parse(reader["usuStatus"].ToString());
                                 objItem.perfCod = int.Parse(reader["perfCod"].ToString());
+
+                                listaRetorno.Add(objItem);
+                            }
+                        }
+
+                        reader.Close();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return listaRetorno;
+        }
+
+        public List<PerfilModel> ListaPerfil(int perfCod)
+        {
+            List<PerfilModel> listaRetorno = new List<PerfilModel>();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@perfCod", perfCod);
+
+                        command.CommandText = @"
+                                                    SELECT perfCod, perfDesc, perfStatus
+                                                    FROM " + _bdAgenda + @".dbo.Perfil WITH(NOLOCK)
+                                                ";
+
+                        if (perfCod > 0)
+                        {
+                            command.CommandText += " WHERE perfCod = @perfCod";
+                        }
+
+                        command.CommandText += " ORDER BY perfDesc";
+
+                        SqlDataReader reader = null;
+                        reader = command.ExecuteReader();
+                        if (reader != null && reader.HasRows)
+                        {
+                            PerfilModel objItem;
+                            while (reader.Read())
+                            {
+                                objItem = new PerfilModel();
+                                objItem.perfCod = int.Parse(reader["perfCod"].ToString());
+                                objItem.perfDesc = reader["perfDesc"].ToString();
+                                objItem.perfStatus = bool.Parse(reader["perfStatus"].ToString());
 
                                 listaRetorno.Add(objItem);
                             }
