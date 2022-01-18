@@ -417,6 +417,59 @@ namespace Agenda.DATA.Repositories
             return ret;
         }
 
+        public string AlteraStatusUsuario(int usuCod, bool usuStatus, int usuCodEnv)
+        {
+            usuStatus = !usuStatus;
+            string ret = "";
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@usuCod", usuCod);
+                        command.Parameters.AddWithValue("@usuStatus", usuStatus);
+
+                        command.CommandText = @"
+                                                    UPDATE " + _bdAgenda + @".dbo.Usuario
+                                                    SET 
+                                                        usuStatus=@usuStatus
+                                                    WHERE usuCod=@usuCod;
+                                                ";
+                        command.ExecuteNonQuery();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                        ret = "OK";
+
+                        object obj = JObject.Parse("{\n    \"usuCod\":\"" + usuCod.ToString() + "\",\n    \"usuStatus\": \"" + usuStatus.ToString() + "\"\n}");
+                        InsereLog(obj, usuCodEnv, 2, dataHoraTransacao); //-> Tipo de Log de Transação = 2.
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+                        ret = ex.Message;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = ex.Message;
+            }
+
+            return ret;
+        }
+
         public string ManterMaquina(MaquinaModel objMaquina, int usuCod)
         {
             string ret = "";

@@ -266,6 +266,34 @@ namespace ApiAgendaServicos.Controllers
                 return BadRequest("Parâmetros inválidos.");
             }
         }
+
+        [Route("{usuCod}/{usuStatus}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult AlteraStatusUsuario(int usuCod, bool usuStatus)
+        {
+            if (usuCod > 0)
+            {
+                var param = ParametrosToken(0); //-> 0: usuCod.
+                int usuCodCad = int.Parse(param.ToString().Split(":")[1]);
+
+                var ret = _agendaRepo.AlteraStatusUsuario(usuCod, usuStatus, usuCodCad);
+
+                if (ret == "OK")
+                {
+                    return Ok(ret);
+                }
+                else
+                {
+                    return BadRequest("Erro: " + ret);
+                }
+            }
+            else
+            {
+                return BadRequest("Parâmetros inválidos.");
+            }
+        }
         #endregion
 
         //--------------------------------------------------------------------------------------------------------------------------------
