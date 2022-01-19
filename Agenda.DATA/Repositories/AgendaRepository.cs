@@ -691,6 +691,95 @@ namespace Agenda.DATA.Repositories
 
             return ret;
         }
+
+        public string ManterUsuario(UsuarioTbModel objUsuario, int usuCod)
+        {
+            string ret = "";
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@usuCod", objUsuario.usuCod);
+                        command.Parameters.AddWithValue("@usuNome", objUsuario.usuNome);
+                        command.Parameters.AddWithValue("@usuLogin", objUsuario.usuLogin);
+                        command.Parameters.AddWithValue("@usuSenha", objUsuario.usuSenha);
+                        command.Parameters.AddWithValue("@usuStatus", objUsuario.usuStatus);
+                        command.Parameters.AddWithValue("@perfCod", objUsuario.perfCod);
+
+                        //-> Se tiver id, faz Update:
+                        if (objUsuario.usuCod > 0)
+                        {
+                            command.CommandText = @"
+                                                        UPDATE " + _bdAgenda + @".dbo.Usuario
+                                                        SET 
+                                                        usuNome=@usuNome, 
+                                                        usuLogin=@usuLogin, 
+                                                    ";
+                            //-> Se a senha estiver preenchida, atualiza também.
+                            if (objUsuario.usuSenha.Length > 0)
+                            {
+                                command.CommandText += @"
+                                                            usuSenha=@usuSenha, 
+                                                    ";
+                            }
+
+                            command.CommandText += @"
+                                                        usuStatus=@usuStatus, 
+                                                        perfCod=@perfCod
+                                                        WHERE usuCod=@usuCod;
+                                                    ";
+
+                            command.ExecuteNonQuery();
+                        }
+                        //-> Senão, insere.
+                        else
+                        {
+                            command.CommandText = @"
+                                                        INSERT INTO " + _bdAgenda + @".dbo.Usuario
+                                                        (usuNome, usuLogin, usuSenha, usuStatus, perfCod)
+                                                        VALUES(
+                                                        @usuNome, 
+                                                        @usuLogin, 
+                                                        @usuSenha, 
+                                                        @usuStatus, 
+                                                        @perfCod
+                                                        );
+                                                    ";
+                            command.ExecuteNonQuery();
+                        }
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                        ret = "OK";
+
+                        InsereLog(objUsuario, usuCod, 2, dataHoraTransacao); //-> Tipo de Log 2: Transação.
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+                        ret = ex.Message;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = ex.Message;
+            }
+
+            return ret;
+        }
         #endregion
 
         //--------------------------------------------------------------------------------------------------------------------------------

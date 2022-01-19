@@ -183,6 +183,39 @@ namespace ApiAgendaServicos.Controllers
             }
         }
 
+        [HttpPost]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ManterUsuario([FromBody] UsuarioTbModel objUsuario)
+        {
+            if (objUsuario != null)
+            {
+                var param = ParametrosToken(0); //-> 0: usuCod.
+                int usuCod = int.Parse(param.ToString().Split(":")[1]);
+
+                //-> Criptografando a senha
+                if(objUsuario.usuSenha.Length > 0)
+                {
+                    objUsuario.usuSenha = _crypto.GerarHashString(objUsuario.usuSenha);
+                }
+
+                var ret = _agendaRepo.ManterUsuario(objUsuario, usuCod);
+
+                if (ret == "OK")
+                {
+                    return Ok(ret);
+                }
+                else
+                {
+                    return BadRequest("Erro: " + ret);
+                }
+            }
+            else
+            {
+                return BadRequest("Parâmetros inválidos.");
+            }
+        }
+
         [Route("{veicCod}/{veicStatus}")]
         [HttpGet]
         [Authorize("Bearer")]
