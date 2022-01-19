@@ -1384,6 +1384,63 @@ namespace Agenda.DATA.Repositories
 
             return listaRetorno;
         }
+
+        public bool VerificaLogin(string usuLogin)
+        {
+            bool ret = false;
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@usuLogin", usuLogin);
+
+                        command.CommandText = @"
+                                                    SELECT usuCod, usuNome, usuLogin, usuSenha, usuStatus, perfCod
+                                                    FROM " + _bdAgenda + @".dbo.Usuario
+                                                    WHERE usuLogin = @usuLogin;
+                                                ";
+
+                        DataTable dt = new DataTable();
+                        SqlDataReader reader;
+                        reader = command.ExecuteReader();
+                        dt.Load(reader);
+                        if (dt.Rows.Count > 0)
+                        {
+                            ret = true;
+                        }
+
+                        reader.Close();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return ret;
+        }
         #endregion
     }
 }

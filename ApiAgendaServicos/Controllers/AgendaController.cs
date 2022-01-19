@@ -467,6 +467,23 @@ namespace ApiAgendaServicos.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [Route("{usuLogin}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult VerificaLogin(string usuLogin)
+        {
+            try
+            {
+                var resp = _agendaRepo.VerificaLogin(usuLogin);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
         #endregion
     }
 }
