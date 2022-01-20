@@ -194,12 +194,39 @@ namespace ApiAgendaServicos.Controllers
                 int usuCod = int.Parse(param.ToString().Split(":")[1]);
 
                 //-> Criptografando a senha
-                if(objUsuario.usuSenha.Length > 0)
+                if (objUsuario.usuSenha.Length > 0)
                 {
                     objUsuario.usuSenha = _crypto.GerarHashString(objUsuario.usuSenha);
                 }
 
                 var ret = _agendaRepo.ManterUsuario(objUsuario, usuCod);
+
+                if (ret == "OK")
+                {
+                    return Ok(ret);
+                }
+                else
+                {
+                    return BadRequest("Erro: " + ret);
+                }
+            }
+            else
+            {
+                return BadRequest("Parâmetros inválidos.");
+            }
+        }
+
+        [HttpPost]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ManterItemChecklist([FromBody] ItemCheckListModel objItemChecklist)
+        {
+            if (objItemChecklist != null)
+            {
+                var param = ParametrosToken(0); //-> 0: usuCod.
+                int usuCod = int.Parse(param.ToString().Split(":")[1]);
+
+                var ret = _agendaRepo.ManterItemChecklist(objItemChecklist, usuCod);
 
                 if (ret == "OK")
                 {
@@ -312,6 +339,34 @@ namespace ApiAgendaServicos.Controllers
                 int usuCodCad = int.Parse(param.ToString().Split(":")[1]);
 
                 var ret = _agendaRepo.AlteraStatusUsuario(usuCod, usuStatus, usuCodCad);
+
+                if (ret == "OK")
+                {
+                    return Ok(ret);
+                }
+                else
+                {
+                    return BadRequest("Erro: " + ret);
+                }
+            }
+            else
+            {
+                return BadRequest("Parâmetros inválidos.");
+            }
+        }
+
+        [Route("{itmChLsCod}/{itmChLsStatus}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult AlteraStatusItemCheckList(int itmChLsCod, bool itmChLsStatus)
+        {
+            if (itmChLsCod > 0)
+            {
+                var param = ParametrosToken(0); //-> 0: usuCod.
+                int usuCodCad = int.Parse(param.ToString().Split(":")[1]);
+
+                var ret = _agendaRepo.AlteraStatusItemCheckList(itmChLsCod, itmChLsStatus, usuCodCad);
 
                 if (ret == "OK")
                 {
@@ -460,6 +515,23 @@ namespace ApiAgendaServicos.Controllers
             try
             {
                 var resp = _agendaRepo.ListaPerfil(perfCod);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [Route("{itmChLsCod?}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaItemChecklist(int itmChLsCod = 0)
+        {
+            try
+            {
+                var resp = _agendaRepo.ListaItemChecklist(itmChLsCod);
                 return Ok(resp);
             }
             catch (Exception ex)

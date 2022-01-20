@@ -417,6 +417,59 @@ namespace Agenda.DATA.Repositories
             return ret;
         }
 
+        public string AlteraStatusItemCheckList(int itmChLsCod, bool itmChLsStatus, int usuCod)
+        {
+            itmChLsStatus = !itmChLsStatus;
+            string ret = "";
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@itmChLsCod", itmChLsCod);
+                        command.Parameters.AddWithValue("@itmChLsStatus", itmChLsStatus);
+
+                        command.CommandText = @"
+                                                    UPDATE " + _bdAgenda + @".dbo.ItemCheckList
+                                                    SET 
+                                                    itmChLsStatus=@itmChLsStatus
+                                                    WHERE itmChLsCod=@itmChLsCod;
+                                                ";
+                        command.ExecuteNonQuery();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                        ret = "OK";
+
+                        object obj = JObject.Parse("{\n    \"itmChLsCod\":\"" + itmChLsCod.ToString() + "\",\n    \"itmChLsStatus\": \"" + itmChLsStatus.ToString() + "\"\n}");
+                        InsereLog(obj, usuCod, 2, dataHoraTransacao); //-> Tipo de Log de Transação = 2.
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+                        ret = ex.Message;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = ex.Message;
+            }
+
+            return ret;
+        }
+
         public string AlteraStatusUsuario(int usuCod, bool usuStatus, int usuCodEnv)
         {
             usuStatus = !usuStatus;
@@ -764,6 +817,79 @@ namespace Agenda.DATA.Repositories
                         ret = "OK";
 
                         InsereLog(objUsuario, usuCod, 2, dataHoraTransacao); //-> Tipo de Log 2: Transação.
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+                        ret = ex.Message;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = ex.Message;
+            }
+
+            return ret;
+        }
+
+        public string ManterItemChecklist(ItemCheckListModel objChecklist, int usuCod)
+        {
+            string ret = "";
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@itmChLsCod", objChecklist.itmChLsCod);
+                        command.Parameters.AddWithValue("@itmChLsDesc", objChecklist.itmChLsDesc);
+                        command.Parameters.AddWithValue("@itmChLsObrig", objChecklist.itmChLsObrig);
+                        command.Parameters.AddWithValue("@itmChLsStatus", objChecklist.itmChLsStatus);
+
+                        //-> Se tiver id, faz Update:
+                        if (objChecklist.itmChLsCod > 0)
+                        {
+                            command.CommandText = @"
+                                                        UPDATE " + _bdAgenda + @".dbo.ItemCheckList
+                                                        SET 
+                                                        itmChLsDesc=@itmChLsDesc, 
+                                                        itmChLsObrig=itmChLsObrig, 
+                                                        itmChLsStatus=@itmChLsStatus
+                                                        WHERE itmChLsCod=@itmChLsCod;
+                                                    ";
+                            command.ExecuteNonQuery();
+                        }
+                        //-> Senão, insere.
+                        else
+                        {
+                            command.CommandText = @"
+                                                        INSERT INTO " + _bdAgenda + @".dbo.ItemCheckList
+                                                        (itmChLsDesc, itmChLsObrig, itmChLsStatus)
+                                                        VALUES(
+                                                        @itmChLsDesc, 
+                                                        @itmChLsObrig, 
+                                                        @itmChLsStatus
+                                                        );
+                                                    ";
+                            command.ExecuteNonQuery();
+                        }
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                        ret = "OK";
+
+                        InsereLog(objChecklist, usuCod, 2, dataHoraTransacao); //-> Tipo de Log 2: Transação.
                     }
                     catch (Exception ex)
                     {
@@ -1329,6 +1455,77 @@ namespace Agenda.DATA.Repositories
                                 objItem.perfCod = int.Parse(reader["perfCod"].ToString());
                                 objItem.perfDesc = reader["perfDesc"].ToString();
                                 objItem.perfStatus = bool.Parse(reader["perfStatus"].ToString());
+
+                                listaRetorno.Add(objItem);
+                            }
+                        }
+
+                        reader.Close();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return listaRetorno;
+        }
+
+        public List<ItemCheckListModel> ListaItemChecklist(int itmChLsCod)
+        {
+            List<ItemCheckListModel> listaRetorno = new List<ItemCheckListModel>();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@itmChLsCod", itmChLsCod);
+
+                        command.CommandText = @"
+                                                    SELECT itmChLsCod, itmChLsDesc, itmChLsObrig, itmChLsStatus
+                                                    FROM " + _bdAgenda + @".dbo.ItemCheckList WITH(NOLOCK)
+                                                ";
+
+                        if (itmChLsCod > 0)
+                        {
+                            command.CommandText += " WHERE itmChLsCod = @itmChLsCod";
+                        }
+
+                        command.CommandText += " ORDER BY itmChLsDesc";
+
+                        SqlDataReader reader = null;
+                        reader = command.ExecuteReader();
+                        if (reader != null && reader.HasRows)
+                        {
+                            ItemCheckListModel objItem;
+                            while (reader.Read())
+                            {
+                                objItem = new ItemCheckListModel();
+                                objItem.itmChLsCod = int.Parse(reader["itmChLsCod"].ToString());
+                                objItem.itmChLsDesc = reader["itmChLsDesc"].ToString();
+                                objItem.itmChLsObrig = bool.Parse(reader["itmChLsObrig"].ToString());
+                                objItem.itmChLsStatus = bool.Parse(reader["itmChLsStatus"].ToString());
 
                                 listaRetorno.Add(objItem);
                             }
