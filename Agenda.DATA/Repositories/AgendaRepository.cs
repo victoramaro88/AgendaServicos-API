@@ -1671,6 +1671,147 @@ namespace Agenda.DATA.Repositories
             return listaRetorno;
         }
 
+        public List<TipoChecklistModel> ListaTipoCheckList(int tipChLiCod)
+        {
+            List<TipoChecklistModel> listaRetorno = new List<TipoChecklistModel>();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@tipChLiCod", tipChLiCod);
+
+                        command.CommandText = @"
+                                                    SELECT tipChLiCod, tipChLiDesc, tipChLiStatus
+                                                    FROM " + _bdAgenda + @".dbo.TipoCheckList WITH(NOLOCK)
+                                                ";
+
+                        if (tipChLiCod > 0)
+                        {
+                            command.CommandText += " WHERE tipChLiCod = @tipChLiCod";
+                        }
+
+                        command.CommandText += " ORDER BY tipChLiDesc";
+
+                        SqlDataReader reader = null;
+                        reader = command.ExecuteReader();
+                        if (reader != null && reader.HasRows)
+                        {
+                            TipoChecklistModel objItem;
+                            while (reader.Read())
+                            {
+                                objItem = new TipoChecklistModel();
+                                objItem.tipChLiCod = int.Parse(reader["tipChLiCod"].ToString());
+                                objItem.tipChLiDesc = reader["tipChLiDesc"].ToString();
+                                objItem.tipChLiStatus = bool.Parse(reader["tipChLiStatus"].ToString());
+
+                                listaRetorno.Add(objItem);
+                            }
+                        }
+
+                        reader.Close();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return listaRetorno;
+        }
+
+        public List<ChecklistModel> ListaCheckList(int chLsCod)
+        {
+            List<ChecklistModel> listaRetorno = new List<ChecklistModel>();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@chLsCod", chLsCod);
+
+                        command.CommandText = @"
+                                                    SELECT chLsCod, chLsDesc, chLsStatus, tipChLiCod
+                                                    FROM " + _bdAgenda + @".dbo.CheckList WITH(NOLOCK)
+                                                ";
+
+                        if (chLsCod > 0)
+                        {
+                            command.CommandText += " WHERE chLsCod = @chLsCod";
+                        }
+
+                        command.CommandText += " ORDER BY chLsDesc";
+
+                        SqlDataReader reader = null;
+                        reader = command.ExecuteReader();
+                        if (reader != null && reader.HasRows)
+                        {
+                            ChecklistModel objItem;
+                            while (reader.Read())
+                            {
+                                objItem = new ChecklistModel();
+                                objItem.chLsCod = int.Parse(reader["chLsCod"].ToString());
+                                objItem.chLsDesc = reader["chLsDesc"].ToString();
+                                objItem.chLsStatus = bool.Parse(reader["chLsStatus"].ToString());
+                                objItem.tipChLiCod = int.Parse(reader["tipChLiCod"].ToString());
+
+                                listaRetorno.Add(objItem);
+                            }
+                        }
+
+                        reader.Close();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return listaRetorno;
+        }
+
         public bool VerificaLogin(string usuLogin)
         {
             bool ret = false;

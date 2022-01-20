@@ -573,6 +573,40 @@ namespace ApiAgendaServicos.Controllers
             }
         }
 
+        [Route("{tipChLiCod?}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaTipoCheckList(int tipChLiCod = 0)
+        {
+            try
+            {
+                var resp = _agendaRepo.ListaTipoCheckList(tipChLiCod);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [Route("{chLsCod?}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaCheckList(int chLsCod = 0)
+        {
+            try
+            {
+                var resp = _agendaRepo.ListaCheckList(chLsCod);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [Route("{usuLogin}")]
         [HttpGet]
         [Authorize("Bearer")]
