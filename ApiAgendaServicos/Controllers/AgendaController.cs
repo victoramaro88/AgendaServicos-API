@@ -355,6 +355,34 @@ namespace ApiAgendaServicos.Controllers
             }
         }
 
+        [Route("{chLsCod}/{chLsStatus}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult AlteraStatusCheckList(int chLsCod, bool chLsStatus)
+        {
+            if (chLsCod > 0)
+            {
+                var param = ParametrosToken(0); //-> 0: usuCod.
+                int usuCod = int.Parse(param.ToString().Split(":")[1]);
+
+                var ret = _agendaRepo.AlteraStatusCheckList(chLsCod, chLsStatus, usuCod);
+
+                if (ret == "OK")
+                {
+                    return Ok(ret);
+                }
+                else
+                {
+                    return BadRequest("Erro: " + ret);
+                }
+            }
+            else
+            {
+                return BadRequest("Parâmetros inválidos.");
+            }
+        }
+
         [Route("{itmChLsCod}/{itmChLsStatus}")]
         [HttpGet]
         [Authorize("Bearer")]
@@ -599,6 +627,23 @@ namespace ApiAgendaServicos.Controllers
             try
             {
                 var resp = _agendaRepo.ListaCheckList(chLsCod);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [Route("{chLsCod?}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaCheckListItemCheckList(int chLsCod = 0)
+        {
+            try
+            {
+                var resp = _agendaRepo.ListaCheckListItemCheckList(chLsCod);
                 return Ok(resp);
             }
             catch (Exception ex)
