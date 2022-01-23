@@ -129,6 +129,7 @@ namespace ApiAgendaServicos.Controllers
                 return BadRequest("Parâmetros inválidos.");
             }
         }
+
         [HttpPost]
         [Authorize("Bearer")]
         [Produces("application/json")]
@@ -227,6 +228,33 @@ namespace ApiAgendaServicos.Controllers
                 int usuCod = int.Parse(param.ToString().Split(":")[1]);
 
                 var ret = _agendaRepo.ManterItemChecklist(objItemChecklist, usuCod);
+
+                if (ret == "OK")
+                {
+                    return Ok(ret);
+                }
+                else
+                {
+                    return BadRequest("Erro: " + ret);
+                }
+            }
+            else
+            {
+                return BadRequest("Parâmetros inválidos.");
+            }
+        }
+
+        [HttpPost]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ManterCheckList([FromBody] ChecklistEnvioModel objChecklist)
+        {
+            if (objChecklist != null)
+            {
+                var param = ParametrosToken(0); //-> 0: usuCod.
+                int usuCod = int.Parse(param.ToString().Split(":")[1]);
+
+                var ret = _agendaRepo.ManterCheckList(objChecklist, usuCod);
 
                 if (ret == "OK")
                 {

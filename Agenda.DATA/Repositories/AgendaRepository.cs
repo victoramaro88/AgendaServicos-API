@@ -959,6 +959,153 @@ namespace Agenda.DATA.Repositories
 
             return ret;
         }
+
+        public string ManterCheckList(ChecklistEnvioModel objChecklist, int usuCod)
+        {
+            string ret = "";
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@chLsCod", objChecklist.objChecklist.chLsCod);
+                        command.Parameters.AddWithValue("@chLsDesc", objChecklist.objChecklist.chLsDesc);
+                        command.Parameters.AddWithValue("@chLsStatus", objChecklist.objChecklist.chLsStatus);
+                        command.Parameters.AddWithValue("@tipChLiCod", objChecklist.objChecklist.tipChLiCod);
+
+                        //-> Se tiver id, faz Update:
+                        if (objChecklist.objChecklist.chLsCod > 0)
+                        {
+                            //-> Altera primeiro o checklist
+                            command.CommandText = @"
+                                                        UPDATE " + _bdAgenda + @".dbo.CheckList
+                                                        SET 
+                                                        chLsDesc=@chLsDesc, 
+                                                        chLsStatus=@chLsStatus, 
+                                                        tipChLiCod=@tipChLiCod
+                                                        WHERE chLsCod=@chLsCod;
+                                                    ";
+                            command.ExecuteNonQuery();
+
+                            //-> Apaga os itens que estavam relacionados (ChkLstItmChkLst)
+                            command.CommandText = @"
+                                                        DELETE FROM " + _bdAgenda + @".dbo.ChkLstItmChkLst
+                                                        WHERE chLsCod=@chLsCod;
+                                                    ";
+                            command.ExecuteNonQuery();
+
+                            //-> Insere os novos itens na tabela de relacionamento (ChkLstItmChkLst)
+                            foreach (var itmChLs in objChecklist.listaItemChecklist)
+                            {
+                                command.Parameters.Clear();
+                                command.Parameters.AddWithValue("@chLsCod", objChecklist.objChecklist.chLsCod);
+                                command.Parameters.AddWithValue("@itmChLsCod", itmChLs.itmChLsCod);
+                                command.CommandText = @"
+                                                        INSERT INTO " + _bdAgenda + @".dbo.ChkLstItmChkLst
+                                                        (chLsCod, itmChLsCod)
+                                                        VALUES(
+                                                        @chLsCod, 
+                                                        @itmChLsCod
+                                                        );
+                                                    ";
+                                command.ExecuteNonQuery();
+                            }
+                        }
+                        //-> Senão, insere.
+                        else
+                        {
+                            command.CommandText = @"
+                                                        INSERT INTO " + _bdAgenda + @".dbo.Equipe
+                                                        (equipDesc, equipStatus, apNavCod, maqCod)
+                                                        VALUES(
+                                                        @equipDesc, 
+                                                        @equipStatus, 
+                                                        @apNavCod, 
+                                                        @maqCod
+                                                        );
+
+                                                        INSERT INTO " + _bdAgenda + @".dbo.CheckList
+                                                        (chLsDesc, chLsStatus, tipChLiCod)
+                                                        VALUES(
+                                                        chLsDesc, 
+                                                        chLsStatus, 
+                                                        @tipChLiCod
+                                                        );
+                                                    ";
+                            command.ExecuteNonQuery();
+
+                            //-> Retornando o Id que foi inserido da equipe.
+                            command.CommandText = @"
+                                                        SELECT MAX(chLsCod) FROM " + _bdAgenda + @".dbo.CheckList WITH(NOLOCK);
+                                                    ";
+                            int lastEquipCod = 0;
+                            DataTable dt = new DataTable();
+                            SqlDataReader reader;
+                            reader = command.ExecuteReader();
+                            dt.Load(reader);
+                            if (dt.Rows.Count > 0)
+                            {
+                                lastEquipCod = int.Parse(dt.Rows[0].ItemArray[0].ToString());
+                            }
+
+                            if (lastEquipCod > 0)
+                            {
+                                //-> Insere os novos itens na tabela de relacionamento (ChkLstItmChkLst)
+                                foreach (var itmChLs in objChecklist.listaItemChecklist)
+                                {
+                                    command.Parameters.Clear();
+                                    command.Parameters.AddWithValue("@chLsCod", lastEquipCod);
+                                    command.Parameters.AddWithValue("@itmChLsCod", itmChLs.itmChLsCod);
+                                    command.CommandText = @"
+                                                        INSERT INTO " + _bdAgenda + @".dbo.ChkLstItmChkLst
+                                                        (chLsCod, itmChLsCod)
+                                                        VALUES(
+                                                        @chLsCod, 
+                                                        @itmChLsCod
+                                                        );
+                                                    ";
+                                    command.ExecuteNonQuery();
+                                }
+                            }
+                            else
+                            {
+                                ret = "falha ao realizar a operação.";
+                                transaction.Rollback();
+                                connection.Close();
+                            }
+                        }
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                        ret = "OK";
+
+                        InsereLog(objChecklist, usuCod, 2, dataHoraTransacao); //-> Tipo de Log 2: Transação.
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+                        ret = ex.Message;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = ex.Message;
+            }
+
+            return ret;
+        }
         #endregion
 
         //--------------------------------------------------------------------------------------------------------------------------------
