@@ -1025,20 +1025,11 @@ namespace Agenda.DATA.Repositories
                         else
                         {
                             command.CommandText = @"
-                                                        INSERT INTO " + _bdAgenda + @".dbo.Equipe
-                                                        (equipDesc, equipStatus, apNavCod, maqCod)
-                                                        VALUES(
-                                                        @equipDesc, 
-                                                        @equipStatus, 
-                                                        @apNavCod, 
-                                                        @maqCod
-                                                        );
-
                                                         INSERT INTO " + _bdAgenda + @".dbo.CheckList
                                                         (chLsDesc, chLsStatus, tipChLiCod)
                                                         VALUES(
-                                                        chLsDesc, 
-                                                        chLsStatus, 
+                                                        @chLsDesc, 
+                                                        @chLsStatus, 
                                                         @tipChLiCod
                                                         );
                                                     ";
