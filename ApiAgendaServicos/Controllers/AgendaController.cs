@@ -680,6 +680,23 @@ namespace ApiAgendaServicos.Controllers
             }
         }
 
+        [Route("{eventCod?}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaEvento(int eventCod = 0)
+        {
+            try
+            {
+                var resp = _agendaRepo.ListaEvento(eventCod);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [Route("{usuLogin}")]
         [HttpGet]
         [Authorize("Bearer")]

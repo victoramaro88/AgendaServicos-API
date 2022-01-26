@@ -2073,6 +2073,108 @@ namespace Agenda.DATA.Repositories
             return listaRetorno;
         }
 
+        public List<EventoModel> ListaEvento(int eventCod)
+        {
+            List<EventoModel> listaRetorno = new List<EventoModel>();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@eventCod", eventCod);
+
+                        command.CommandText = @"
+                                                    SELECT 
+	                                                    Evento.eventCod, Evento.eventDesc, Evento.eventLogr, Evento.eventBairr, Evento.eventDtIn, 
+	                                                    Evento.evenDtFi, Evento.eventObse, Evento.eventStatus, 
+	                                                    Evento.horaCod, Horario.horaDesc,
+	                                                    Evento.cidaCod, Cidade.cidaDesc, Estado.estSigl,
+	                                                    Evento.diamCod, DiametroFuro.diamDesc,
+	                                                    Evento.usuCod, Usuario.usuNome,
+	                                                    Evento.maqCod, Maquina.maqMarca, Maquina.maqModelo 
+	                                                    FROM " + _bdAgenda + @".dbo.Evento AS Evento WITH(NOLOCK)
+                                                    INNER JOIN " + _bdAgenda + @".dbo.Horario AS Horario WITH(NOLOCK) ON Horario.horaCod = Evento.horaCod
+                                                    INNER JOIN " + _bdAgenda + @".dbo.Cidade AS Cidade WITH(NOLOCK) ON Cidade.cidaCod = Evento.cidaCod
+                                                    INNER JOIN " + _bdAgenda + @".dbo.Estado AS Estado WITH(NOLOCK) ON Estado.estCod = Cidade.estCod 
+                                                    INNER JOIN " + _bdAgenda + @".dbo.DiametroFuro AS DiametroFuro WITH(NOLOCK) ON DiametroFuro.diamCod = Evento.diamCod
+                                                    INNER JOIN " + _bdAgenda + @".dbo.Usuario AS Usuario WITH(NOLOCK) ON Usuario.usuCod = Evento.usuCod 
+                                                    INNER JOIN " + _bdAgenda + @".dbo.Maquina AS Maquina WITH(NOLOCK) ON Maquina.maqCod = Evento.maqCod
+                                                ";
+
+                        if (eventCod > 0)
+                        {
+                            command.CommandText += " WHERE Evento.eventCod = @eventCod ";
+                        }
+
+                        command.CommandText += " ORDER BY Evento.eventDtIn;";
+
+                        SqlDataReader reader = null;
+                        reader = command.ExecuteReader();
+                        if (reader != null && reader.HasRows)
+                        {
+                            EventoModel objItem;
+                            while (reader.Read())
+                            {
+                                objItem = new EventoModel();
+
+                                objItem.eventCod = int.Parse(reader["eventCod"].ToString());
+                                objItem.eventDesc = reader["eventDesc"].ToString();
+                                objItem.eventLogr = reader["eventLogr"].ToString();
+                                objItem.eventBairr = reader["eventBairr"].ToString();
+                                objItem.eventDtIn = DateTime.Parse(reader["eventDtIn"].ToString());
+                                objItem.evenDtFi = DateTime.Parse(reader["evenDtFi"].ToString());
+                                objItem.eventObse = reader["eventObse"].ToString();
+                                objItem.eventStatus = bool.Parse(reader["eventStatus"].ToString());
+                                objItem.horaCod = int.Parse(reader["horaCod"].ToString());
+                                objItem.cidaCod = int.Parse(reader["cidaCod"].ToString());
+                                objItem.diamCod = int.Parse(reader["diamCod"].ToString());
+                                objItem.usuCod = int.Parse(reader["usuCod"].ToString());
+                                objItem.maqCod = int.Parse(reader["maqCod"].ToString());
+
+                                objItem.horaDesc = reader["horaDesc"].ToString();
+                                objItem.cidaDesc = reader["cidaDesc"].ToString();
+                                objItem.estSigl = reader["estSigl"].ToString();
+                                objItem.diamDesc = reader["diamDesc"].ToString();
+                                objItem.usuNome = reader["usuNome"].ToString();
+                                objItem.maqMarca = reader["maqMarca"].ToString();
+                                objItem.maqModelo = reader["maqModelo"].ToString();
+
+        listaRetorno.Add(objItem);
+                            }
+                        }
+
+                        reader.Close();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return listaRetorno;
+        }
+
         public bool VerificaLogin(string usuLogin)
         {
             bool ret = false;

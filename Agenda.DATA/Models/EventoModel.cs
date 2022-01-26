@@ -19,5 +19,13 @@ namespace Agenda.DATA.Models
         public int diamCod { get; set; }
         public int usuCod { get; set; }
         public int maqCod { get; set; }
+
+        public string horaDesc { get; set; }
+        public string cidaDesc { get; set; }
+        public string estSigl { get; set; }
+        public string diamDesc { get; set; }
+        public string usuNome { get; set; }
+        public string maqMarca { get; set; }
+        public string maqModelo { get; set; }
     }
 }
