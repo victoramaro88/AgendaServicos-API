@@ -2073,7 +2073,7 @@ namespace Agenda.DATA.Repositories
             return listaRetorno;
         }
 
-        public List<EventoModel> ListaEvento(int eventCod)
+        public List<EventoModel> ListaEventoAtivo(int eventCod)
         {
             List<EventoModel> listaRetorno = new List<EventoModel>();
             try
@@ -2109,11 +2109,12 @@ namespace Agenda.DATA.Repositories
                                                     INNER JOIN " + _bdAgenda + @".dbo.DiametroFuro AS DiametroFuro WITH(NOLOCK) ON DiametroFuro.diamCod = Evento.diamCod
                                                     INNER JOIN " + _bdAgenda + @".dbo.Usuario AS Usuario WITH(NOLOCK) ON Usuario.usuCod = Evento.usuCod 
                                                     INNER JOIN " + _bdAgenda + @".dbo.Maquina AS Maquina WITH(NOLOCK) ON Maquina.maqCod = Evento.maqCod
+                                                    WHERE Evento.evenDtFi >= (SELECT DATEADD(dd, 0, DATEDIFF(dd, 0, GETDATE())))
                                                 ";
 
                         if (eventCod > 0)
                         {
-                            command.CommandText += " WHERE Evento.eventCod = @eventCod ";
+                            command.CommandText += " AND Evento.eventCod = @eventCod ";
                         }
 
                         command.CommandText += " ORDER BY Evento.eventDtIn;";

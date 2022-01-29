@@ -684,11 +684,11 @@ namespace ApiAgendaServicos.Controllers
         [HttpGet]
         [Authorize("Bearer")]
         [Produces("application/json")]
-        public IActionResult ListaEvento(int eventCod = 0)
+        public IActionResult ListaEventoAtivo(int eventCod = 0)
         {
             try
             {
-                var resp = _agendaRepo.ListaEvento(eventCod);
+                var resp = _agendaRepo.ListaEventoAtivo(eventCod);
                 return Ok(resp);
             }
             catch (Exception ex)
