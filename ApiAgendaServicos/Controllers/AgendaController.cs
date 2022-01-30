@@ -579,6 +579,57 @@ namespace ApiAgendaServicos.Controllers
             }
         }
 
+        [Route("{horaCod?}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaHorario(int horaCod = 0)
+        {
+            try
+            {
+                var resp = _agendaRepo.ListaHorario(horaCod);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [Route("{estCod?}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaEstado(int estCod = 0)
+        {
+            try
+            {
+                var resp = _agendaRepo.ListaEstado(estCod);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [Route("{cidaCod}/{estCod}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaCidade(int cidaCod = 0, int estCod = 0)
+        {
+            try
+            {
+                var resp = _agendaRepo.ListaCidade(cidaCod, estCod);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [Route("{itmChLsCod?}")]
         [HttpGet]
         [Authorize("Bearer")]

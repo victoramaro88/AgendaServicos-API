@@ -1673,6 +1673,227 @@ namespace Agenda.DATA.Repositories
             return listaRetorno;
         }
 
+        public List<HorarioModel> ListaHorario(int horaCod)
+        {
+            List<HorarioModel> listaRetorno = new List<HorarioModel>();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@horaCod", horaCod);
+
+                        command.CommandText = @"
+                                                    SELECT horaCod, horaDesc, horaStatus
+                                                    FROM " + _bdAgenda + @".dbo.Horario WITH(NOLOCK)
+                                                ";
+
+                        if (horaCod > 0)
+                        {
+                            command.CommandText += " WHERE horaCod = @horaCod";
+                        }
+
+                        command.CommandText += " ORDER BY horaDesc";
+
+                        SqlDataReader reader = null;
+                        reader = command.ExecuteReader();
+                        if (reader != null && reader.HasRows)
+                        {
+                            HorarioModel objItem;
+                            while (reader.Read())
+                            {
+                                objItem = new HorarioModel();
+                                objItem.horaCod = int.Parse(reader["horaCod"].ToString());
+                                objItem.horaDesc = reader["horaDesc"].ToString();
+                                objItem.horaStatus = bool.Parse(reader["horaStatus"].ToString());
+
+                                listaRetorno.Add(objItem);
+                            }
+                        }
+
+                        reader.Close();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return listaRetorno;
+        }
+
+        public List<EstadoModel> ListaEstado(int estCod)
+        {
+            List<EstadoModel> listaRetorno = new List<EstadoModel>();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@estCod", estCod);
+
+                        command.CommandText = @"
+                                                    SELECT estCod, estDesc, estSigl, ibgeCod
+                                                    FROM " + _bdAgenda + @".dbo.Estado WITH(NOLOCK)
+                                                ";
+
+                        if (estCod > 0)
+                        {
+                            command.CommandText += " WHERE estCod = @estCod";
+                        }
+
+                        command.CommandText += " ORDER BY estDesc";
+
+                        SqlDataReader reader = null;
+                        reader = command.ExecuteReader();
+                        if (reader != null && reader.HasRows)
+                        {
+                            EstadoModel objItem;
+                            while (reader.Read())
+                            {
+                                objItem = new EstadoModel();
+                                objItem.estCod = int.Parse(reader["estCod"].ToString());
+                                objItem.estDesc = reader["estDesc"].ToString();
+                                objItem.estSigl = reader["estSigl"].ToString();
+                                objItem.ibgeCod = int.Parse(reader["ibgeCod"].ToString());
+
+                                listaRetorno.Add(objItem);
+                            }
+                        }
+
+                        reader.Close();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return listaRetorno;
+        }
+
+        public List<CidadeModel> ListaCidade(int cidaCod, int estCod)
+        {
+            List<CidadeModel> listaRetorno = new List<CidadeModel>();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@estCod", estCod);
+                        command.Parameters.AddWithValue("@cidaCod", cidaCod);
+
+                        command.CommandText = @"
+                                                    SELECT cidaCod, cidaDesc, ibgeCod, estCod
+                                                    FROM " + _bdAgenda + @".dbo.Cidade WITH(NOLOCK)
+                                                ";
+
+                        if (cidaCod > 0 && estCod > 0)
+                        {
+                            command.CommandText += " WHERE cidaCod = @cidaCod AND estCod = @estCod ";
+                        }
+                        else if (cidaCod > 0 && estCod == 0)
+                        {
+                            command.CommandText += " WHERE cidaCod = @cidaCod ";
+                        }
+                        else if (cidaCod == 0 && estCod > 0)
+                        {
+                            command.CommandText += " WHERE estCod = @estCod ";
+                        }
+
+                        command.CommandText += " ORDER BY cidaDesc";
+
+                        SqlDataReader reader = null;
+                        reader = command.ExecuteReader();
+                        if (reader != null && reader.HasRows)
+                        {
+                            CidadeModel objItem;
+                            while (reader.Read())
+                            {
+                                objItem = new CidadeModel();
+                                objItem.cidaCod = int.Parse(reader["cidaCod"].ToString());
+                                objItem.cidaDesc = reader["cidaDesc"].ToString();
+                                objItem.ibgeCod = int.Parse(reader["ibgeCod"].ToString());
+                                objItem.estCod = int.Parse(reader["estCod"].ToString());
+
+                                listaRetorno.Add(objItem);
+                            }
+                        }
+
+                        reader.Close();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return listaRetorno;
+        }
+
         public List<ItemCheckListModel> ListaItemChecklist(int itmChLsCod)
         {
             List<ItemCheckListModel> listaRetorno = new List<ItemCheckListModel>();
