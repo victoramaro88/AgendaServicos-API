@@ -2320,7 +2320,7 @@ namespace Agenda.DATA.Repositories
 	                                                    , ItemCheckList.itmChLsDesc, ItemCheckList.itmChLsObrig, ItemCheckList.itmChLsStatus
                                                     FROM " + _bdAgenda + @".dbo.ChkLstItmChkLst AS ChkLstItmChkLst
                                                     INNER JOIN " + _bdAgenda + @".dbo.ItemCheckList AS ItemCheckList ON ItemCheckList.itmChLsCod  = ChkLstItmChkLst.itmChLsCod 
-                                                    WHERE ChkLstItmChkLst.chLsCod = @chLsCod
+                                                    WHERE ChkLstItmChkLst.chLsCod = @chLsCod AND ItemCheckList.itmChLsStatus = 1
                                                     ORDER BY ItemCheckList.itmChLsDesc;
                                                 ";
 
