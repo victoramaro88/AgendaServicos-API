@@ -2322,7 +2322,8 @@ namespace Agenda.DATA.Repositories
 	                                                    Evento.cidaCod, Cidade.cidaDesc, Estado.estSigl,
 	                                                    Evento.diamCod, DiametroFuro.diamDesc,
 	                                                    Evento.usuCod, Usuario.usuNome,
-	                                                    Evento.maqCod, Maquina.maqMarca, Maquina.maqModelo 
+	                                                    Evento.maqCod, Maquina.maqMarca, Maquina.maqModelo,
+                                                        Evento.tipChLiCod , TipoCheckList.tipChLiDesc 
 	                                                    FROM " + _bdAgenda + @".dbo.Evento AS Evento WITH(NOLOCK)
                                                     INNER JOIN " + _bdAgenda + @".dbo.Horario AS Horario WITH(NOLOCK) ON Horario.horaCod = Evento.horaCod
                                                     INNER JOIN " + _bdAgenda + @".dbo.Cidade AS Cidade WITH(NOLOCK) ON Cidade.cidaCod = Evento.cidaCod
@@ -2330,6 +2331,7 @@ namespace Agenda.DATA.Repositories
                                                     INNER JOIN " + _bdAgenda + @".dbo.DiametroFuro AS DiametroFuro WITH(NOLOCK) ON DiametroFuro.diamCod = Evento.diamCod
                                                     INNER JOIN " + _bdAgenda + @".dbo.Usuario AS Usuario WITH(NOLOCK) ON Usuario.usuCod = Evento.usuCod 
                                                     INNER JOIN " + _bdAgenda + @".dbo.Maquina AS Maquina WITH(NOLOCK) ON Maquina.maqCod = Evento.maqCod
+                                                    INNER JOIN " + _bdAgenda + @".dbo.TipoCheckList AS TipoCheckList WITH(NOLOCK) ON TipoCheckList.tipChLiCod = Evento.tipChLiCod
                                                     WHERE Evento.evenDtFi >= (SELECT DATEADD(dd, 0, DATEDIFF(dd, 0, GETDATE())))
                                                 ";
 
@@ -2362,6 +2364,7 @@ namespace Agenda.DATA.Repositories
                                 objItem.diamCod = int.Parse(reader["diamCod"].ToString());
                                 objItem.usuCod = int.Parse(reader["usuCod"].ToString());
                                 objItem.maqCod = int.Parse(reader["maqCod"].ToString());
+                                objItem.tipChLiCod = int.Parse(reader["tipChLiCod"].ToString());
 
                                 objItem.horaDesc = reader["horaDesc"].ToString();
                                 objItem.cidaDesc = reader["cidaDesc"].ToString();
@@ -2370,8 +2373,9 @@ namespace Agenda.DATA.Repositories
                                 objItem.usuNome = reader["usuNome"].ToString();
                                 objItem.maqMarca = reader["maqMarca"].ToString();
                                 objItem.maqModelo = reader["maqModelo"].ToString();
+                                objItem.tipChLiDesc = reader["tipChLiDesc"].ToString();
 
-        listaRetorno.Add(objItem);
+                                listaRetorno.Add(objItem);
                             }
                         }
 
