@@ -2294,6 +2294,79 @@ namespace Agenda.DATA.Repositories
             return listaRetorno;
         }
 
+        public List<CheckListItensModel> ListaChLsByCheckList(int chLsCod)
+        {
+            List<CheckListItensModel> listaRetorno = new List<CheckListItensModel>();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@chLsCod", chLsCod);
+
+                        command.CommandText = @"
+                                                    SELECT
+	                                                    ChkLstItmChkLst.chkLstItmChkLst, ChkLstItmChkLst.chLsCod, ChkLstItmChkLst.itmChLsCod
+	                                                    , ItemCheckList.itmChLsDesc, ItemCheckList.itmChLsObrig, ItemCheckList.itmChLsStatus
+                                                    FROM " + _bdAgenda + @".dbo.ChkLstItmChkLst AS ChkLstItmChkLst
+                                                    INNER JOIN " + _bdAgenda + @".dbo.ItemCheckList AS ItemCheckList ON ItemCheckList.itmChLsCod  = ChkLstItmChkLst.itmChLsCod 
+                                                    WHERE ChkLstItmChkLst.chLsCod = @chLsCod
+                                                    ORDER BY ItemCheckList.itmChLsDesc;
+                                                ";
+
+                        SqlDataReader reader = null;
+                        reader = command.ExecuteReader();
+                        if (reader != null && reader.HasRows)
+                        {
+                            CheckListItensModel objItem;
+                            while (reader.Read())
+                            {
+                                objItem = new CheckListItensModel();
+
+                                
+                                objItem.chkLstItmChkLst = int.Parse(reader["chkLstItmChkLst"].ToString());
+                                objItem.chLsCod = int.Parse(reader["chLsCod"].ToString());
+                                objItem.itmChLsCod = int.Parse(reader["itmChLsCod"].ToString());
+                                objItem.itmChLsDesc = reader["itmChLsDesc"].ToString();
+                                objItem.itmChLsObrig = bool.Parse(reader["itmChLsObrig"].ToString());
+                                objItem.itmChLsStatus = bool.Parse(reader["itmChLsStatus"].ToString());
+
+                                listaRetorno.Add(objItem);
+                            }
+                        }
+
+                        reader.Close();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return listaRetorno;
+        }
+
         public List<EventoModel> ListaEventoAtivo(int eventCod)
         {
             List<EventoModel> listaRetorno = new List<EventoModel>();

@@ -731,6 +731,30 @@ namespace ApiAgendaServicos.Controllers
             }
         }
 
+        [Route("{chLsCod?}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaChLsByCheckList(int chLsCod = 0)
+        {
+            if (chLsCod > 0)
+            {
+                try
+                {
+                    var resp = _agendaRepo.ListaChLsByCheckList(chLsCod);
+                    return Ok(resp);
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest(ex.Message);
+                }
+            }
+            else
+            {
+                return BadRequest("Campos inválidos.");
+            }
+        }
+
         [Route("{eventCod?}")]
         [HttpGet]
         [Authorize("Bearer")]
