@@ -443,6 +443,23 @@ namespace ApiAgendaServicos.Controllers
         //--------------------------------------------------------------------------------------------------------------------------------
 
         #region PESQUISAS
+        [Route("{usuLogin}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult VerificaLogin(string usuLogin)
+        {
+            try
+            {
+                var resp = _agendaRepo.VerificaLogin(usuLogin);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [Route("{diamCod?}")]
         [HttpGet]
         [Authorize("Bearer")]
@@ -772,15 +789,14 @@ namespace ApiAgendaServicos.Controllers
             }
         }
 
-        [Route("{usuLogin}")]
-        [HttpGet]
+        [HttpPost]
         [Authorize("Bearer")]
         [Produces("application/json")]
-        public IActionResult VerificaLogin(string usuLogin)
+        public IActionResult ListaMaquinasDisponiveis([FromBody] PesqMaqDispModel objPesquisa)
         {
             try
             {
-                var resp = _agendaRepo.VerificaLogin(usuLogin);
+                var resp = _agendaRepo.ListaMaquinasDisponiveis(objPesquisa);
                 return Ok(resp);
             }
             catch (Exception ex)
@@ -788,6 +804,9 @@ namespace ApiAgendaServicos.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        //ListaMaquinasDisponiveis(PesqMaqDispModel objPesquisa)
+
         #endregion
     }
 }

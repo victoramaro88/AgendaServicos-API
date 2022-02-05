@@ -2333,7 +2333,7 @@ namespace Agenda.DATA.Repositories
                             {
                                 objItem = new CheckListItensModel();
 
-                                
+
                                 objItem.chkLstItmChkLst = int.Parse(reader["chkLstItmChkLst"].ToString());
                                 objItem.chLsCod = int.Parse(reader["chLsCod"].ToString());
                                 objItem.itmChLsCod = int.Parse(reader["itmChLsCod"].ToString());
@@ -2472,6 +2472,130 @@ namespace Agenda.DATA.Repositories
             }
 
             return listaRetorno;
+        }
+
+        public List<MaquinaModel> ListaMaquinasDisponiveis(PesqMaqDispModel objPesquisa)
+        {
+            List<MaquinaModel> listaMaquinas = new List<MaquinaModel>();
+            List<MaquinaModel> listaMaquinasAgendadas = new List<MaquinaModel>();
+            List<MaquinaModel> listaMaquinasRetorno = new List<MaquinaModel>();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        #region LISTANDO TODAS AS MÁQUINAS
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@diamCod", objPesquisa.diamCod);
+                        command.Parameters.AddWithValue("@eventDtIn", objPesquisa.eventDtIn);
+                        command.Parameters.AddWithValue("@evenDtFi", objPesquisa.evenDtFi);
+                        command.CommandText = @"
+                                                    SELECT maqCod, maqMarca, maqModelo, maqObse, maqStatus, diamCod, veicCod
+                                                    FROM " + _bdAgenda + @".dbo.Maquina WITH(NOLOCK)
+                                                    WHERE maqStatus = 1 AND diamCod = @diamCod;
+                                                ";
+
+                        SqlDataReader reader = null;
+                        reader = command.ExecuteReader();
+                        if (reader != null && reader.HasRows)
+                        {
+                            MaquinaModel objItem;
+                            while (reader.Read())
+                            {
+                                objItem = new MaquinaModel();
+
+                                objItem.maqCod = int.Parse(reader["maqCod"].ToString());
+                                objItem.maqMarca = reader["maqMarca"].ToString();
+                                objItem.maqModelo = reader["maqModelo"].ToString();
+                                objItem.maqObse = reader["maqObse"].ToString();
+                                objItem.maqStatus = bool.Parse(reader["maqStatus"].ToString());
+                                objItem.diamCod = int.Parse(reader["diamCod"].ToString());
+                                objItem.veicCod = int.Parse(reader["veicCod"].ToString());
+
+                                listaMaquinas.Add(objItem);
+                            }
+                        }
+                        reader.Close();
+                        #endregion
+
+                        #region LISTANDO TODAS AS MÁQUINAS QUE JÁ POSSUEM AGENDAMENTO NESTE PERÍODO
+
+                        command.CommandText = @"
+                                                    SELECT
+	                                                    Maquina.maqCod, Maquina.maqMarca, Maquina.maqModelo, Maquina.maqObse, Maquina.maqStatus, Maquina.diamCod, Maquina.veicCod
+                                                    FROM " + _bdAgenda + @".dbo.Maquina AS Maquina
+                                                    INNER JOIN " + _bdAgenda + @".dbo.DiametroFuro AS DiametroFuro ON DiametroFuro.diamCod = Maquina.diamCod
+                                                    INNER JOIN " + _bdAgenda + @".dbo.Evento AS Evento ON Evento.maqCod = Maquina.maqCod
+                                                    WHERE Maquina.maqStatus = 1
+	                                                    AND DiametroFuro.diamCod = @diamCod
+	                                                    AND (Evento.eventDtIn >= @eventDtIn AND eventDtIn <= eventDtIn
+	                                                    OR Evento.evenDtFi >= @evenDtFi AND eventDtIn <= eventDtIn)
+	                                                    AND Evento.evenDtFi >= (SELECT DATEADD(dd, 0, DATEDIFF(dd, 0, GETDATE())));
+                                                ";
+
+                        reader = null;
+                        reader = command.ExecuteReader();
+                        if (reader != null && reader.HasRows)
+                        {
+                            MaquinaModel objItem;
+                            while (reader.Read())
+                            {
+                                objItem = new MaquinaModel();
+
+                                objItem.maqCod = int.Parse(reader["maqCod"].ToString());
+                                objItem.maqMarca = reader["maqMarca"].ToString();
+                                objItem.maqModelo = reader["maqModelo"].ToString();
+                                objItem.maqObse = reader["maqObse"].ToString();
+                                objItem.maqStatus = bool.Parse(reader["maqStatus"].ToString());
+                                objItem.diamCod = int.Parse(reader["diamCod"].ToString());
+                                objItem.veicCod = int.Parse(reader["veicCod"].ToString());
+
+                                listaMaquinasAgendadas.Add(objItem);
+                            }
+                        }
+                        reader.Close();
+                        #endregion
+
+                        #region REMOVENDO DA LISTA DE MÁQUINAS, AS QUE JÁ EXISTIREM AGENDAMENTO
+                        foreach (var itemMaq in listaMaquinas)
+                        {
+                            foreach (var itemMaqAgen in listaMaquinasAgendadas)
+                            {
+                                if(itemMaqAgen.maqCod != itemMaq.maqCod)
+                                {
+                                    listaMaquinasRetorno.Add(itemMaq);
+                                }
+                            }
+                        }
+                        #endregion
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return listaMaquinasRetorno;
         }
 
         public bool VerificaLogin(string usuLogin)
