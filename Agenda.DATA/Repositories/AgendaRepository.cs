@@ -2566,15 +2566,23 @@ namespace Agenda.DATA.Repositories
                         #endregion
 
                         #region REMOVENDO DA LISTA DE MÁQUINAS, AS QUE JÁ EXISTIREM AGENDAMENTO
-                        foreach (var itemMaq in listaMaquinas)
+                        if (listaMaquinasAgendadas.Count > 0)
                         {
-                            foreach (var itemMaqAgen in listaMaquinasAgendadas)
+                            foreach (var itemMaq in listaMaquinas)
                             {
-                                if(itemMaqAgen.maqCod != itemMaq.maqCod)
+
+                                foreach (var itemMaqAgen in listaMaquinasAgendadas)
                                 {
-                                    listaMaquinasRetorno.Add(itemMaq);
+                                    if (itemMaqAgen.maqCod != itemMaq.maqCod)
+                                    {
+                                        listaMaquinasRetorno.Add(itemMaq);
+                                    }
                                 }
                             }
+                        }
+                        else
+                        {
+                            listaMaquinasRetorno = listaMaquinas;
                         }
                         #endregion
 
