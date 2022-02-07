@@ -271,6 +271,33 @@ namespace ApiAgendaServicos.Controllers
             }
         }
 
+        [HttpPost]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ManterEvento([FromBody] EventoManterModel objEventoManter)
+        {
+            if (objEventoManter != null)
+            {
+                var param = ParametrosToken(0); //-> 0: usuCod.
+                int usuCod = int.Parse(param.ToString().Split(":")[1]);
+
+                var ret = _agendaRepo.ManterEvento(objEventoManter, usuCod);
+
+                if (ret == "OK")
+                {
+                    return Ok(ret);
+                }
+                else
+                {
+                    return BadRequest("Erro: " + ret);
+                }
+            }
+            else
+            {
+                return BadRequest("Parâmetros inválidos.");
+            }
+        }
+
         [Route("{veicCod}/{veicStatus}")]
         [HttpGet]
         [Authorize("Bearer")]

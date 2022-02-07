@@ -1097,6 +1097,179 @@ namespace Agenda.DATA.Repositories
 
             return ret;
         }
+
+        public string ManterEvento(EventoManterModel objEventoManter, int usuCod)
+        {
+            string ret = "";
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@eventCod", objEventoManter.objEvento.eventCod);
+                        command.Parameters.AddWithValue("@eventDesc", objEventoManter.objEvento.eventDesc);
+                        command.Parameters.AddWithValue("@eventLogr", objEventoManter.objEvento.eventLogr);
+                        command.Parameters.AddWithValue("@eventBairr", objEventoManter.objEvento.eventBairr);
+                        command.Parameters.AddWithValue("@eventDtIn", objEventoManter.objEvento.eventDtIn);
+                        command.Parameters.AddWithValue("@evenDtFi", objEventoManter.objEvento.evenDtFi);
+                        command.Parameters.AddWithValue("@eventObse", objEventoManter.objEvento.eventObse);
+                        command.Parameters.AddWithValue("@eventStatus", objEventoManter.objEvento.eventStatus);
+                        command.Parameters.AddWithValue("@horaCod", objEventoManter.objEvento.horaCod);
+                        command.Parameters.AddWithValue("@cidaCod", objEventoManter.objEvento.cidaCod);
+                        command.Parameters.AddWithValue("@diamCod", objEventoManter.objEvento.diamCod);
+                        command.Parameters.AddWithValue("@usuCod", objEventoManter.objEvento.usuCod);
+                        command.Parameters.AddWithValue("@maqCod", objEventoManter.objEvento.maqCod);
+                        command.Parameters.AddWithValue("@tipChLiCod", objEventoManter.objEvento.tipChLiCod);
+
+                        //-> Se tiver id, faz Update:
+                        if (objEventoManter.objEvento.eventCod > 0)
+                        {
+                            //-> Altera primeiro o checklist
+                            command.CommandText = @"
+                                                        UPDATE " + _bdAgenda + @".dbo.Evento
+                                                        SET 
+	                                                        eventDesc=@eventDesc, 
+	                                                        eventLogr=@eventLogr, 
+	                                                        eventBairr=@eventBairr, 
+	                                                        eventDtIn=@eventDtIn, 
+	                                                        evenDtFi=@evenDtFi, 
+	                                                        eventObse=@eventObse, 
+	                                                        eventStatus=@eventStatus, 
+	                                                        horaCod=@horaCod, 
+	                                                        cidaCod=@cidaCod, 
+	                                                        diamCod=@diamCod, 
+	                                                        usuCod=@usuCod, 
+	                                                        maqCod=@maqCod, 
+	                                                        tipChLiCod=@tipChLiCod
+                                                        WHERE eventCod=@eventCod;
+                                                    ";
+                            command.ExecuteNonQuery();
+
+                            //-> Apaga os itens que estavam relacionados (ChkLstItmChkLst)
+                            command.CommandText = @"
+                                                        DELETE FROM " + _bdAgenda + @".dbo.CheckListRespostas
+                                                        WHERE eventCod=@eventCod;
+                                                    ";
+                            command.ExecuteNonQuery();
+
+                            //-> Insere os novos itens na tabela de relacionamento (ChkLstItmChkLst)
+                            foreach (var itmResp in objEventoManter.listaRespostas)
+                            {
+                                command.Parameters.Clear();
+                                command.Parameters.AddWithValue("@eventCod", itmResp.eventCod);
+                                command.Parameters.AddWithValue("@chkLstItmChkLst", itmResp.chkLstItmChkLst);
+                                command.Parameters.AddWithValue("@itmChLsCod", itmResp.chkLstResp);
+                                command.CommandText = @"
+                                                                INSERT INTO " + _bdAgenda + @".dbo.CheckListRespostas
+                                                                (eventCod, chkLstItmChkLst, chkLstResp)
+                                                                VALUES(
+                                                                    @eventCod, 
+                                                                    @chkLstItmChkLst, 
+                                                                    @itmChLsCod
+                                                                );
+                                                            ";
+                                command.ExecuteNonQuery();
+                            }
+                        }
+                        //-> Senão, insere.
+                        else
+                        {
+                            command.CommandText = @"
+                                                        INSERT INTO " + _bdAgenda + @".dbo.Evento
+                                                        (eventDesc, eventLogr, eventBairr, eventDtIn, evenDtFi, eventObse, eventStatus, horaCod, 
+                                                            cidaCod, diamCod, usuCod, maqCod, tipChLiCod)
+                                                        VALUES(
+                                                            @eventDesc, 
+                                                            @eventLogr, 
+                                                            @eventBairr, 
+                                                            @eventDtIn, 
+                                                            @evenDtFi, 
+                                                            @eventObse, 
+                                                            @eventStatus, 
+                                                            @horaCod, 
+                                                            @cidaCod, 
+                                                            @diamCod, 
+                                                            @usuCod, 
+                                                            @maqCod, 
+                                                            @tipChLiCod
+                                                        );
+                                                    ";
+                            command.ExecuteNonQuery();
+
+                            //-> Retornando o Id que foi inserido da equipe.
+                            command.CommandText = @"
+                                                        SELECT MAX(eventCod) FROM " + _bdAgenda + @".dbo.Evento WITH(NOLOCK);
+                                                    ";
+                            int lastEventCod = 0;
+                            DataTable dt = new DataTable();
+                            SqlDataReader reader;
+                            reader = command.ExecuteReader();
+                            dt.Load(reader);
+                            if (dt.Rows.Count > 0)
+                            {
+                                lastEventCod = int.Parse(dt.Rows[0].ItemArray[0].ToString());
+                            }
+
+                            if (lastEventCod > 0)
+                            {
+                                //-> Insere os novos itens na tabela de relacionamento (ChkLstItmChkLst)
+                                foreach (var itmResp in objEventoManter.listaRespostas)
+                                {
+                                    command.Parameters.Clear();
+                                    command.Parameters.AddWithValue("@eventCod", lastEventCod);
+                                    command.Parameters.AddWithValue("@chkLstItmChkLst", itmResp.chkLstItmChkLst);
+                                    command.Parameters.AddWithValue("@itmChLsCod", itmResp.chkLstResp);
+                                    command.CommandText = @"
+                                                                INSERT INTO " + _bdAgenda + @".dbo.CheckListRespostas
+                                                                (eventCod, chkLstItmChkLst, chkLstResp)
+                                                                VALUES(
+                                                                    @eventCod, 
+                                                                    @chkLstItmChkLst, 
+                                                                    @itmChLsCod
+                                                                );
+                                                            ";
+                                    command.ExecuteNonQuery();
+                                }
+                            }
+                            else
+                            {
+                                ret = "falha ao realizar a operação.";
+                                transaction.Rollback();
+                                connection.Close();
+                            }
+                        }
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                        ret = "OK";
+
+                        InsereLog(objEventoManter, usuCod, 2, dataHoraTransacao); //-> Tipo de Log 2: Transação.
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+                        ret = ex.Message;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = ex.Message;
+            }
+
+            return ret;
+        }
         #endregion
 
         //--------------------------------------------------------------------------------------------------------------------------------
