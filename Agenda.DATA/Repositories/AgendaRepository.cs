@@ -2649,6 +2649,9 @@ namespace Agenda.DATA.Repositories
 
         public List<MaquinaModel> ListaMaquinasDisponiveis(PesqMaqDispModel objPesquisa)
         {
+            objPesquisa.eventDtIn = objPesquisa.eventDtIn.Date;
+            objPesquisa.evenDtFi = objPesquisa.evenDtFi.Date;
+
             List<MaquinaModel> listaMaquinas = new List<MaquinaModel>();
             List<MaquinaModel> listaMaquinasAgendadas = new List<MaquinaModel>();
             List<MaquinaModel> listaMaquinasRetorno = new List<MaquinaModel>();
@@ -2702,17 +2705,33 @@ namespace Agenda.DATA.Repositories
 
                         #region LISTANDO TODAS AS MÁQUINAS QUE JÁ POSSUEM AGENDAMENTO NESTE PERÍODO
 
+                        //command.CommandText = @"
+                        //                            SELECT
+	                       //                             Maquina.maqCod, Maquina.maqMarca, Maquina.maqModelo, Maquina.maqObse, Maquina.maqStatus, Maquina.diamCod, Maquina.veicCod
+                        //                            FROM " + _bdAgenda + @".dbo.Maquina AS Maquina
+                        //                            INNER JOIN " + _bdAgenda + @".dbo.DiametroFuro AS DiametroFuro ON DiametroFuro.diamCod = Maquina.diamCod
+                        //                            INNER JOIN " + _bdAgenda + @".dbo.Evento AS Evento ON Evento.maqCod = Maquina.maqCod
+                        //                            WHERE Maquina.maqStatus = 1
+	                       //                             AND DiametroFuro.diamCod = @diamCod
+	                       //                             AND (Evento.eventDtIn >= @eventDtIn AND eventDtIn <= eventDtIn
+	                       //                             OR Evento.evenDtFi >= @evenDtFi AND eventDtIn <= eventDtIn)
+	                       //                             AND Evento.evenDtFi >= (SELECT DATEADD(dd, 0, DATEDIFF(dd, 0, GETDATE())));
+                        //                        ";
+
                         command.CommandText = @"
                                                     SELECT
-	                                                    Maquina.maqCod, Maquina.maqMarca, Maquina.maqModelo, Maquina.maqObse, Maquina.maqStatus, Maquina.diamCod, Maquina.veicCod
+                                                        Maquina.maqCod, Maquina.maqMarca, Maquina.maqModelo, Maquina.maqObse, Maquina.maqStatus, 
+                                                        Maquina.diamCod, Maquina.veicCod
                                                     FROM " + _bdAgenda + @".dbo.Maquina AS Maquina
                                                     INNER JOIN " + _bdAgenda + @".dbo.DiametroFuro AS DiametroFuro ON DiametroFuro.diamCod = Maquina.diamCod
                                                     INNER JOIN " + _bdAgenda + @".dbo.Evento AS Evento ON Evento.maqCod = Maquina.maqCod
                                                     WHERE Maquina.maqStatus = 1
-	                                                    AND DiametroFuro.diamCod = @diamCod
-	                                                    AND (Evento.eventDtIn >= @eventDtIn AND eventDtIn <= eventDtIn
-	                                                    OR Evento.evenDtFi >= @evenDtFi AND eventDtIn <= eventDtIn)
-	                                                    AND Evento.evenDtFi >= (SELECT DATEADD(dd, 0, DATEDIFF(dd, 0, GETDATE())));
+                                                        AND DiametroFuro.diamCod = @diamCod
+                                                        AND Evento.evenDtFi >= (SELECT DATEADD(dd, 0, DATEDIFF(dd, 0, GETDATE())))
+                                                        AND (
+    		                                                    (@eventDtIn >= Evento.eventDtIn AND @evenDtFi >= Evento.evenDtFi)
+    		                                                    AND @eventDtIn <= Evento.evenDtFi
+                                                        );
                                                 ";
 
                         reader = null;

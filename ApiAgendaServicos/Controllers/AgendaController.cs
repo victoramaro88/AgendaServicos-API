@@ -832,8 +832,6 @@ namespace ApiAgendaServicos.Controllers
             }
         }
 
-        //ListaMaquinasDisponiveis(PesqMaqDispModel objPesquisa)
-
         #endregion
     }
 }
