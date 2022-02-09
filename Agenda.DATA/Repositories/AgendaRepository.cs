@@ -2578,7 +2578,7 @@ namespace Agenda.DATA.Repositories
                                                     INNER JOIN " + _bdAgenda + @".dbo.Usuario AS Usuario WITH(NOLOCK) ON Usuario.usuCod = Evento.usuCod 
                                                     INNER JOIN " + _bdAgenda + @".dbo.Maquina AS Maquina WITH(NOLOCK) ON Maquina.maqCod = Evento.maqCod
                                                     INNER JOIN " + _bdAgenda + @".dbo.TipoCheckList AS TipoCheckList WITH(NOLOCK) ON TipoCheckList.tipChLiCod = Evento.tipChLiCod
-                                                    WHERE Evento.evenDtFi >= (SELECT DATEADD(dd, 0, DATEDIFF(dd, 0, GETDATE())))
+                                                    --WHERE Evento.evenDtFi >= (SELECT DATEADD(dd, 0, DATEDIFF(dd, 0, GETDATE())))
                                                 ";
 
                         if (eventCod > 0)
