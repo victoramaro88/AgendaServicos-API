@@ -2632,7 +2632,7 @@ namespace Agenda.DATA.Repositories
                                                     INNER JOIN " + _bdAgenda + @".dbo.Maquina AS Maquina WITH(NOLOCK) ON Maquina.maqCod = Evento.maqCod
                                                     INNER JOIN " + _bdAgenda + @".dbo.TipoCheckList AS TipoCheckList WITH(NOLOCK) ON TipoCheckList.tipChLiCod = Evento.tipChLiCod
                                                     --WHERE Evento.evenDtFi >= (SELECT DATEADD(dd, 0, DATEDIFF(dd, 0, GETDATE())))
-                                                    WHERE Evento.eventStatus != 10
+                                                    WHERE Evento.eventStatus != 10 AND Evento.eventStatus != 9
                                                 ";
 
                         if (eventCod > 0)
