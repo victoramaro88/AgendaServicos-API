@@ -576,6 +576,59 @@ namespace Agenda.DATA.Repositories
             return ret;
         }
 
+        public string AlteraStatusEvento(int eventCod, int eventStatus, int usuCod)
+        {
+            string ret = "";
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@eventCod", eventCod);
+                        command.Parameters.AddWithValue("@eventStatus", eventStatus);
+
+                        command.CommandText = @"
+                                                    UPDATE " + _bdAgenda + @".dbo.Evento
+                                                    SET 
+                                                        eventStatus=@eventStatus
+                                                    WHERE eventCod=@eventCod
+                                                    SELECT 'OK' AS Retorno;
+                                                ";
+                        command.ExecuteNonQuery();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                        ret = "OK";
+
+                        object obj = JObject.Parse("{\n    \"eventCod\":\"" + eventCod.ToString() + "\",\n    \"eventStatus\": \"" + eventStatus.ToString() + "\"\n}");
+                        InsereLog(obj, usuCod, 2, dataHoraTransacao); //-> Tipo de Log de Transação = 2.
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+                        ret = ex.Message;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ret = ex.Message;
+            }
+
+            return ret;
+        }
+
         public string ManterMaquina(MaquinaModel objMaquina, int usuCod)
         {
             string ret = "";
@@ -2579,6 +2632,7 @@ namespace Agenda.DATA.Repositories
                                                     INNER JOIN " + _bdAgenda + @".dbo.Maquina AS Maquina WITH(NOLOCK) ON Maquina.maqCod = Evento.maqCod
                                                     INNER JOIN " + _bdAgenda + @".dbo.TipoCheckList AS TipoCheckList WITH(NOLOCK) ON TipoCheckList.tipChLiCod = Evento.tipChLiCod
                                                     --WHERE Evento.evenDtFi >= (SELECT DATEADD(dd, 0, DATEDIFF(dd, 0, GETDATE())))
+                                                    WHERE Evento.eventStatus != 10
                                                 ";
 
                         if (eventCod > 0)
@@ -2604,7 +2658,7 @@ namespace Agenda.DATA.Repositories
                                 objItem.eventDtIn = DateTime.Parse(reader["eventDtIn"].ToString());
                                 objItem.evenDtFi = DateTime.Parse(reader["evenDtFi"].ToString());
                                 objItem.eventObse = reader["eventObse"].ToString();
-                                objItem.eventStatus = bool.Parse(reader["eventStatus"].ToString());
+                                objItem.eventStatus = int.Parse(reader["eventStatus"].ToString());
                                 objItem.horaCod = int.Parse(reader["horaCod"].ToString());
                                 objItem.cidaCod = int.Parse(reader["cidaCod"].ToString());
                                 objItem.diamCod = int.Parse(reader["diamCod"].ToString());
@@ -2796,6 +2850,76 @@ namespace Agenda.DATA.Repositories
             }
 
             return listaMaquinasRetorno;
+        }
+
+        public List<StatusModel> ListaStatus(int sttTpCod)
+        {
+            List<StatusModel> listaRetorno = new List<StatusModel>();
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_ConnAgenda))
+                {
+                    connection.Open();
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
+                    transaction = connection.BeginTransaction("Transaction");
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        DateTime dataHoraTransacao = DateTime.Now;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@sttTpCod", sttTpCod);
+
+                        command.CommandText = @"
+                                                    SELECT statusCod, statusDesc, sttTpCod
+                                                    FROM " + _bdAgenda + @".dbo.Status 
+                                                ";
+
+                        if (sttTpCod > 0)
+                        {
+                            command.CommandText += "  WHERE sttTpCod = @sttTpCod ";
+                        }
+
+                        command.CommandText += " ORDER BY statusDesc;";
+
+                        SqlDataReader reader = null;
+                        reader = command.ExecuteReader();
+                        if (reader != null && reader.HasRows)
+                        {
+                            StatusModel objItem;
+                            while (reader.Read())
+                            {
+                                objItem = new StatusModel();
+                                objItem.statusCod = int.Parse(reader["statusCod"].ToString());
+                                objItem.statusDesc = reader["statusDesc"].ToString();
+                                objItem.sttTpCod = int.Parse(reader["sttTpCod"].ToString());
+
+                                listaRetorno.Add(objItem);
+                            }
+                        }
+
+                        reader.Close();
+
+                        //-> Finaliza a transação.
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        connection.Close();
+
+                        throw;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return listaRetorno;
         }
 
         public bool VerificaLogin(string usuLogin)

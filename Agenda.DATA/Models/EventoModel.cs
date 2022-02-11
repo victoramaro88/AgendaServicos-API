@@ -13,7 +13,7 @@ namespace Agenda.DATA.Models
         public DateTime eventDtIn { get; set; }
         public DateTime evenDtFi { get; set; }
         public string eventObse { get; set; }
-        public bool eventStatus { get; set; }
+        public int eventStatus { get; set; }
         public int horaCod { get; set; }
         public int cidaCod { get; set; }
         public int diamCod { get; set; }

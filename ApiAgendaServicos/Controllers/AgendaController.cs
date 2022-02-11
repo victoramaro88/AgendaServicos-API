@@ -465,6 +465,34 @@ namespace ApiAgendaServicos.Controllers
                 return BadRequest("Parâmetros inválidos.");
             }
         }
+
+        [Route("{eventCod}/{eventStatus}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult AlteraStatusEvento(int eventCod, int eventStatus)
+        {
+            if (eventCod > 0)
+            {
+                var param = ParametrosToken(0); //-> 0: usuCod.
+                int usuCodCad = int.Parse(param.ToString().Split(":")[1]);
+
+                var ret = _agendaRepo.AlteraStatusEvento(eventCod, eventStatus, usuCodCad);
+
+                if (ret == "OK")
+                {
+                    return Ok(ret);
+                }
+                else
+                {
+                    return BadRequest("Erro: " + ret);
+                }
+            }
+            else
+            {
+                return BadRequest("Parâmetros inválidos.");
+            }
+        }
         #endregion
 
         //--------------------------------------------------------------------------------------------------------------------------------
@@ -832,6 +860,23 @@ namespace ApiAgendaServicos.Controllers
             }
         }
 
+
+        [Route("{sttTpCod?}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaStatus(int sttTpCod = 0)
+        {
+            try
+            {
+                var resp = _agendaRepo.ListaStatus(sttTpCod);
+                return Ok(resp);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
         #endregion
     }
 }
