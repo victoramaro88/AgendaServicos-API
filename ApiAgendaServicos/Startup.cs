@@ -42,6 +42,8 @@ namespace ApiAgendaServicos
                   {
                       builder.WithOrigins(
                         "http://localhost:4200",
+                        "http://www.victoramaro.com.br",
+                        "https://www.victoramaro.com.br",
                         "*"
                       )
                 .AllowAnyHeader()

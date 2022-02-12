@@ -844,6 +844,30 @@ namespace ApiAgendaServicos.Controllers
             }
         }
 
+        [Route("{eventStatus}")]
+        [HttpGet]
+        [Authorize("Bearer")]
+        [Produces("application/json")]
+        public IActionResult ListaEventoStatus(int eventStatus)
+        {
+            if (eventStatus > 0)
+            {
+                try
+                {
+                    var resp = _agendaRepo.ListaEventoStatus(eventStatus);
+                    return Ok(resp);
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest(ex.Message);
+                }
+            }
+            else
+            {
+                return BadRequest("Parâmetros inválidos.");
+            }
+        }
+
         [HttpPost]
         [Authorize("Bearer")]
         [Produces("application/json")]
