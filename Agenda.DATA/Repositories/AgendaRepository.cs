@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Xml;
 
@@ -2834,7 +2835,8 @@ namespace Agenda.DATA.Repositories
                         command.CommandText = @"
                                                     SELECT maqCod, maqMarca, maqModelo, maqObse, maqStatus, diamCod, veicCod
                                                     FROM " + _bdAgenda + @".dbo.Maquina WITH(NOLOCK)
-                                                    WHERE maqStatus = 1 AND diamCod = @diamCod;
+                                                    WHERE maqStatus = 1 AND diamCod = @diamCod
+                                                    ORDER BY maqCod;
                                                 ";
 
                         SqlDataReader reader = null;
@@ -2862,33 +2864,22 @@ namespace Agenda.DATA.Repositories
 
                         #region LISTANDO TODAS AS MÁQUINAS QUE JÁ POSSUEM AGENDAMENTO NESTE PERÍODO
 
-                        //command.CommandText = @"
-                        //                            SELECT
-	                       //                             Maquina.maqCod, Maquina.maqMarca, Maquina.maqModelo, Maquina.maqObse, Maquina.maqStatus, Maquina.diamCod, Maquina.veicCod
-                        //                            FROM " + _bdAgenda + @".dbo.Maquina AS Maquina
-                        //                            INNER JOIN " + _bdAgenda + @".dbo.DiametroFuro AS DiametroFuro ON DiametroFuro.diamCod = Maquina.diamCod
-                        //                            INNER JOIN " + _bdAgenda + @".dbo.Evento AS Evento ON Evento.maqCod = Maquina.maqCod
-                        //                            WHERE Maquina.maqStatus = 1
-	                       //                             AND DiametroFuro.diamCod = @diamCod
-	                       //                             AND (Evento.eventDtIn >= @eventDtIn AND eventDtIn <= eventDtIn
-	                       //                             OR Evento.evenDtFi >= @evenDtFi AND eventDtIn <= eventDtIn)
-	                       //                             AND Evento.evenDtFi >= (SELECT DATEADD(dd, 0, DATEDIFF(dd, 0, GETDATE())));
-                        //                        ";
-
                         command.CommandText = @"
-                                                    SELECT
+                                                    SELECT DISTINCT 
                                                         Maquina.maqCod, Maquina.maqMarca, Maquina.maqModelo, Maquina.maqObse, Maquina.maqStatus, 
                                                         Maquina.diamCod, Maquina.veicCod
                                                     FROM " + _bdAgenda + @".dbo.Maquina AS Maquina
                                                     INNER JOIN " + _bdAgenda + @".dbo.DiametroFuro AS DiametroFuro ON DiametroFuro.diamCod = Maquina.diamCod
                                                     INNER JOIN " + _bdAgenda + @".dbo.Evento AS Evento ON Evento.maqCod = Maquina.maqCod
+                                                    INNER JOIN AgendaServicos.dbo.Equipe AS Equipe ON Equipe.maqCod = Maquina.maqCod
                                                     WHERE Maquina.maqStatus = 1
                                                         AND DiametroFuro.diamCod = @diamCod
                                                         AND Evento.evenDtFi >= (SELECT DATEADD(dd, 0, DATEDIFF(dd, 0, GETDATE())))
                                                         AND (
-    		                                                    (@eventDtIn >= Evento.eventDtIn AND @evenDtFi >= Evento.evenDtFi)
-    		                                                    AND @eventDtIn <= Evento.evenDtFi
-                                                        );
+    		                                                    @eventDtIn <= Evento.evenDtFi 
+	                                                            AND @eventDtIn >= Evento.eventDtIn
+                                                        )
+                                                    ORDER BY Maquina.maqCod;
                                                 ";
 
                         reader = null;
@@ -2917,15 +2908,13 @@ namespace Agenda.DATA.Repositories
                         #region REMOVENDO DA LISTA DE MÁQUINAS, AS QUE JÁ EXISTIREM AGENDAMENTO
                         if (listaMaquinasAgendadas.Count > 0)
                         {
-                            foreach (var itemMaq in listaMaquinas)
+                            listaMaquinasRetorno = listaMaquinas;
+                            foreach (var itemMaqAgen in listaMaquinasAgendadas)
                             {
-
-                                foreach (var itemMaqAgen in listaMaquinasAgendadas)
+                                MaquinaModel maq = listaMaquinas.Where(m => m.maqCod == itemMaqAgen.maqCod).FirstOrDefault();
+                                if (maq != null)
                                 {
-                                    if (itemMaqAgen.maqCod != itemMaq.maqCod)
-                                    {
-                                        listaMaquinasRetorno.Add(itemMaq);
-                                    }
+                                    listaMaquinasRetorno.Remove(maq);
                                 }
                             }
                         }
