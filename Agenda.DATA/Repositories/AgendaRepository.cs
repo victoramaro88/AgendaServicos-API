@@ -971,7 +971,7 @@ namespace Agenda.DATA.Repositories
                                                         UPDATE " + _bdAgenda + @".dbo.ItemCheckList
                                                         SET 
                                                         itmChLsDesc=@itmChLsDesc, 
-                                                        itmChLsObrig=itmChLsObrig, 
+                                                        itmChLsObrig=@itmChLsObrig, 
                                                         itmChLsStatus=@itmChLsStatus
                                                         WHERE itmChLsCod=@itmChLsCod;
                                                     ";
@@ -1282,7 +1282,7 @@ namespace Agenda.DATA.Repositories
                                 foreach (var itmResp in objEventoManter.listaRespostas)
                                 {
                                     command.Parameters.Clear();
-                                    command.Parameters.AddWithValue("@eventCod", itmResp.eventCod);
+                                    command.Parameters.AddWithValue("@eventCod", lastEventCod);
                                     command.Parameters.AddWithValue("@chLsCod", itmResp.chLsCod);
                                     command.Parameters.AddWithValue("@itmChLsCod", itmResp.itmChLsCod);
                                     command.Parameters.AddWithValue("@chkLstResp", itmResp.chkLstResp);
