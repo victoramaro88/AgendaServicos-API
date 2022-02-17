@@ -8,7 +8,8 @@ namespace Agenda.DATA.Models
     {
         public int chkLsRespCod { get; set; }
         public int eventCod { get; set; }
-        public int chkLstItmChkLst { get; set; }
+        public int chLsCod { get; set; }
+        public int itmChLsCod { get; set; }
         public bool chkLstResp { get; set; }
     }
 }

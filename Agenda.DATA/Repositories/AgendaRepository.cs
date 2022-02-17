@@ -1221,15 +1221,17 @@ namespace Agenda.DATA.Repositories
                             {
                                 command.Parameters.Clear();
                                 command.Parameters.AddWithValue("@eventCod", itmResp.eventCod);
-                                command.Parameters.AddWithValue("@chkLstItmChkLst", itmResp.chkLstItmChkLst);
-                                command.Parameters.AddWithValue("@itmChLsCod", itmResp.chkLstResp);
+                                command.Parameters.AddWithValue("@chLsCod", itmResp.chLsCod);
+                                command.Parameters.AddWithValue("@itmChLsCod", itmResp.itmChLsCod);
+                                command.Parameters.AddWithValue("@chkLstResp", itmResp.chkLstResp);
                                 command.CommandText = @"
                                                                 INSERT INTO " + _bdAgenda + @".dbo.CheckListRespostas
-                                                                (eventCod, chkLstItmChkLst, chkLstResp)
+                                                                (eventCod, chLsCod, itmChLsCod, chkLstResp)
                                                                 VALUES(
                                                                     @eventCod, 
-                                                                    @chkLstItmChkLst, 
-                                                                    @itmChLsCod
+                                                                    @chLsCod, 
+                                                                    @itmChLsCod, 
+                                                                    @chkLstResp
                                                                 );
                                                             ";
                                 command.ExecuteNonQuery();
@@ -1280,16 +1282,18 @@ namespace Agenda.DATA.Repositories
                                 foreach (var itmResp in objEventoManter.listaRespostas)
                                 {
                                     command.Parameters.Clear();
-                                    command.Parameters.AddWithValue("@eventCod", lastEventCod);
-                                    command.Parameters.AddWithValue("@chkLstItmChkLst", itmResp.chkLstItmChkLst);
-                                    command.Parameters.AddWithValue("@itmChLsCod", itmResp.chkLstResp);
+                                    command.Parameters.AddWithValue("@eventCod", itmResp.eventCod);
+                                    command.Parameters.AddWithValue("@chLsCod", itmResp.chLsCod);
+                                    command.Parameters.AddWithValue("@itmChLsCod", itmResp.itmChLsCod);
+                                    command.Parameters.AddWithValue("@chkLstResp", itmResp.chkLstResp);
                                     command.CommandText = @"
                                                                 INSERT INTO " + _bdAgenda + @".dbo.CheckListRespostas
-                                                                (eventCod, chkLstItmChkLst, chkLstResp)
+                                                                (eventCod, chLsCod, itmChLsCod, chkLstResp)
                                                                 VALUES(
                                                                     @eventCod, 
-                                                                    @chkLstItmChkLst, 
-                                                                    @itmChLsCod
+                                                                    @chLsCod, 
+                                                                    @itmChLsCod, 
+                                                                    @chkLstResp
                                                                 );
                                                             ";
                                     command.ExecuteNonQuery();
